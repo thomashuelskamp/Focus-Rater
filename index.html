@@ -13,6 +13,7 @@
     --high: #1a56c4; --high-bg: #eef3fd;
     --med:  #b45309; --med-bg:  #fef5e7;
     --low:  #c0392b; --low-bg:  #fdf0ee;
+    --peak: #0f7a4a; --peak-bg: #eafaf3;
     --mono: 'IBM Plex Mono', monospace;
     --sans: 'IBM Plex Sans', sans-serif;
   }
@@ -23,7 +24,6 @@
   header h1 { font-family: var(--mono); font-size: 15px; font-weight: 500; }
   header p  { font-size: 12px; color: var(--muted); }
 
-  /* ── STEPS ── */
   .steps { display: flex; flex-direction: column; gap: 1px; }
 
   .step {
@@ -62,11 +62,10 @@
 
   .step-body { padding: 1rem 1rem 1.1rem; display: none; }
   .step.active .step-body { display: block; }
-  /* keep preview visible even when step 1 is done */
   #step1.done .step-body { display: block; }
   #step1.done .drop-zone { display: none; }
 
-  /* ── STEP 1: UPLOAD ── */
+  /* ── STEP 1: UPLOAD + ROTATE ── */
   .drop-zone {
     border: 1.5px dashed var(--border); border-radius: 7px;
     padding: 2rem 1rem; text-align: center; cursor: pointer;
@@ -78,30 +77,48 @@
   .drop-zone p { font-size: 11px; color: var(--muted); margin-top: 5px; }
 
   .preview-wrap { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-  .preview-img  { width: 100%; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); cursor: zoom-in; }
+  .preview-img  { width: 100%; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); cursor: alias; }
   .preview-img img { width: 100%; height: auto; max-height: 520px; object-fit: contain; display: block; background: var(--surface); }
   .preview-info { font-family: var(--mono); font-size: 10px; color: var(--muted); line-height: 1.8; }
   .preview-info b { color: var(--text); font-weight: 500; }
+
+  /* rotation controls */
+  .rotate-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 8px; padding: 10px 12px;
+    background: var(--surface); border-radius: 7px; border: 1px solid var(--border);
+  }
+  .rotate-row .rotate-label { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
+  .rotate-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--bg); cursor: pointer; font-family: var(--mono); font-size: 11px; font-weight: 500;
+    transition: border-color 0.12s, background 0.12s;
+    user-select: none;
+  }
+  .rotate-btn:hover { border-color: var(--muted); background: #f0f0ee; }
+  .rotate-btn:active { background: var(--surface); }
+  .rotate-icon {
+    display: inline-block;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    line-height: 1;
+    font-size: 14px;
+  }
+  .orientation-badge {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    margin-left: auto; display: flex; align-items: center; gap: 4px;
+  }
+  .orientation-badge b { color: var(--text); font-weight: 500; }
+
+  /* preview actions row */
+  .preview-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 
   /* lightbox */
   .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out; }
   .lightbox.open { display: flex; }
   .lightbox img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 4px; }
 
-  /* ── STEP 2: ORIENTATION ── */
-  .orient-btns { display: flex; gap: 8px; }
-  .orient-btn {
-    flex: 1; padding: 0.7rem 0.5rem; border-radius: 7px;
-    border: 1.5px solid var(--border); background: var(--bg);
-    cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s;
-  }
-  .orient-btn:hover { border-color: var(--muted); background: var(--surface); }
-  .orient-btn.selected { border-color: var(--text); background: var(--surface); }
-  .orient-btn .ob-icon { font-size: 26px; margin-bottom: 5px; }
-  .orient-btn .ob-label { font-size: 12px; font-weight: 500; }
-  .orient-btn .ob-desc  { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
-
-  /* ── STEP 3: RANGE ── */
+  /* ── STEP 2: MARK LABELS ── */
   .mark-wrap { position: relative; display: inline-block; width: 100%; cursor: crosshair; user-select: none; }
   .mark-wrap img { width: 100%; height: auto; display: block; border-radius: 5px; border: 1px solid var(--border); }
   .mark-instructions { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.6; }
@@ -117,7 +134,6 @@
   .mark-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); }
   .mark-status { font-size: 11px; color: var(--muted); font-family: var(--mono); }
   .mark-status b { font-weight: 500; }
-  /* crosshair markers overlaid on image */
   .crosshair {
     position: absolute; pointer-events: none;
     width: 20px; height: 20px; transform: translate(-50%,-50%);
@@ -127,17 +143,23 @@
   }
   .crosshair::before { width: 100%; height: 2px; top: 9px; left: 0; }
   .crosshair::after  { width: 2px; height: 100%; top: 0; left: 9px; }
-  .range-hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
 
-  /* ── STEP 4: RUN ── */
+  /* ── STEP 3: RUN ── */
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; width: fit-content; }
+  .mode-btn { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 5px 13px; cursor: pointer; background: var(--bg); color: var(--muted); border: none; transition: background 0.12s, color 0.12s; letter-spacing: 0.03em; }
+  .mode-btn + .mode-btn { border-left: 1px solid var(--border); }
+  .mode-btn.active { background: var(--text); color: var(--bg); }
   .thresh-row { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: flex-end; }
   .thresh-row .field label { display: block; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
   .thresh-row .field input { width: 90px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-size: 13px; padding: 5px 8px; color: var(--text); outline: none; }
+  .thresh-row .field input:disabled { opacity: 0.4; cursor: not-allowed; }
   .zone-tags { display: flex; gap: 6px; flex-wrap: wrap; align-self: flex-end; }
   .zone-tag { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 3px; }
   .zone-tag.high { background: var(--high-bg); color: var(--high); }
   .zone-tag.med  { background: var(--med-bg);  color: var(--med);  }
   .zone-tag.low  { background: var(--low-bg);  color: var(--low);  }
+  .stdev-info { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 12px; line-height: 1.8; display: none; }
+  .stdev-info b { color: var(--text); }
 
   /* buttons */
   .btn { font-family: var(--mono); font-size: 11px; padding: 7px 16px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); display: inline-block; transition: opacity 0.12s, background 0.12s; }
@@ -165,8 +187,6 @@
   .profile-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
   .profile-name { font-size: 11px; color: var(--muted); }
   .profile-body { padding: 12px; display: flex; gap: 12px; align-items: flex-start; }
-  .profile-img-wrap { width: 110px; flex-shrink: 0; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
-  .profile-img-wrap img { width: 100%; display: block; }
   .chart-wrap { flex: 1; min-width: 0; }
   canvas.chart-canvas { width: 100%; height: 160px; display: block; }
   .chart-legend { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
@@ -177,22 +197,24 @@
   .pill.high { background: var(--high-bg); color: var(--high); }
   .pill.med  { background: var(--med-bg);  color: var(--med);  }
   .pill.low  { background: var(--low-bg);  color: var(--low);  }
+  .pill.peak { background: var(--peak-bg); color: var(--peak); }
 
   .result-actions { display: flex; gap: 8px; margin-top: 4px; }
 
   #analysisCanvas { display: none; }
+  #rotationCanvas { display: none; }
 
   /* ── METHOD ── */
   .method-note { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
   .method-note h2 { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
   .method-note p { font-size: 12px; color: var(--muted); line-height: 1.8; max-width: 640px; }
-  .method-note code { font-family: var(--mono); background: var(--surface); padding: 0 4px; border-radius: 3px; font-size: 11px; }
   .method-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .method-pill { font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 3px; }
 </style>
 </head>
 <body>
 <canvas id="analysisCanvas"></canvas>
+<canvas id="rotationCanvas"></canvas>
 <div class="lightbox" id="lightbox" onclick="document.getElementById('lightbox').classList.remove('open')">
   <img id="lightboxImg" src="" alt="">
 </div>
@@ -205,7 +227,7 @@
 
   <div class="steps">
 
-    <!-- STEP 1: UPLOAD -->
+    <!-- STEP 1: UPLOAD + ROTATE -->
     <div class="step active" id="step1">
       <div class="step-header">
         <div class="step-num">1</div>
@@ -222,50 +244,43 @@
           <input id="fi" type="file" accept="image/*" style="display:none" onchange="onFileSelect(this.files[0])">
         </div>
         <div class="preview-wrap" id="previewWrap" style="display:none">
-          <div class="preview-img" onclick="openLightbox()" title="Click to view full size">
+          <div class="preview-img" onclick="cycleRotation()" title="Click to rotate 90°" style="cursor:alias;">
             <img id="previewImg" src="" alt="">
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+
+          <!-- Rotation controls -->
+          <div class="rotate-row" id="rotateRow">
+            <span class="rotate-label">Rotate</span>
+            <button class="rotate-btn" id="rotBtn" onclick="cycleRotation()" title="Rotate 90° clockwise">
+              <span class="rotate-icon" id="rotIcon">↻</span>
+              <span id="rotLabel">0°</span>
+            </button>
+            <div class="orientation-badge" id="orientBadge">
+              <b id="orientText">—</b>
+            </div>
+          </div>
+
+          <div class="preview-actions">
             <div class="preview-info" id="previewInfo"></div>
-            <button class="btn btn-ghost" onclick="document.getElementById('fi').click()" style="font-size:10px;padding:5px 10px;">Change image</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn btn-ghost" onclick="document.getElementById('fi').click()" style="font-size:10px;padding:5px 10px;">Change image</button>
+              <button class="btn btn-primary" id="toStep2Btn" onclick="goToStep2()" style="font-size:10px;padding:5px 12px;" disabled>Next →</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- STEP 2: ORIENTATION -->
+    <!-- STEP 2: MARK LABEL POSITIONS -->
     <div class="step locked" id="step2">
       <div class="step-header" onclick="jumpTo(2)">
         <div class="step-num">2</div>
-        <div class="step-label">Bar orientation</div>
+        <div class="step-label">Mark label positions</div>
         <div class="step-summary" id="s2summary"></div>
       </div>
       <div class="step-body">
-        <div class="orient-btns">
-          <div class="orient-btn" id="ob-h" onclick="selectOrient('horizontal')">
-            <div class="ob-icon">━</div>
-            <div class="ob-label">Horizontal</div>
-            <div class="ob-desc">Bar runs left to right<br>Scale reads left → right</div>
-          </div>
-          <div class="orient-btn" id="ob-v" onclick="selectOrient('vertical')">
-            <div class="ob-icon">┃</div>
-            <div class="ob-label">Vertical</div>
-            <div class="ob-desc">Bar runs top to bottom<br>Scale reads top → bottom</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 3: LABEL RANGE -->
-    <div class="step locked" id="step3">
-      <div class="step-header" onclick="jumpTo(3)">
-        <div class="step-num">3</div>
-        <div class="step-label">Mark label positions</div>
-        <div class="step-summary" id="s3summary"></div>
-      </div>
-      <div class="step-body">
-        <div class="mark-instructions">
-          Click directly on the <b>first label</b> in the image, then the <b>second label</b>.
+        <div class="mark-instructions" id="markInstr">
+          Click the <b>first label (A)</b> position in the image, then the <b>second label (B)</b>.
           Enter the corresponding scale values below.
         </div>
         <div class="mark-wrap" id="markWrap">
@@ -276,12 +291,12 @@
         <div class="mark-row">
           <div class="mark-field">
             <span class="mark-dot" style="background:#1a56c4;"></span>
-            Label A value <input type="number" id="labelA" value="10" step="1">
+            Label A value <input type="number" id="labelA" value="10" step="5" onkeydown="arrowStep(event,this,5)">
             <span class="mark-status" id="statusA">— not marked</span>
           </div>
           <div class="mark-field">
             <span class="mark-dot" style="background:#c0392b;"></span>
-            Label B value <input type="number" id="labelB" value="15" step="1">
+            Label B value <input type="number" id="labelB" value="15" step="5" onkeydown="arrowStep(event,this,5)">
             <span class="mark-status" id="statusB">— not marked</span>
           </div>
           <button class="btn btn-primary" onclick="confirmRange()" id="confirmRangeBtn" disabled style="opacity:0.4;">Confirm →</button>
@@ -289,14 +304,22 @@
       </div>
     </div>
 
-    <!-- STEP 4: RUN -->
-    <div class="step locked" id="step4">
-      <div class="step-header" onclick="jumpTo(4)">
-        <div class="step-num">4</div>
+    <!-- STEP 3: RUN -->
+    <div class="step locked" id="step3">
+      <div class="step-header" onclick="jumpTo(3)">
+        <div class="step-num">3</div>
         <div class="step-label">Run analysis</div>
-        <div class="step-summary" id="s4summary"></div>
+        <div class="step-summary" id="s3summary"></div>
       </div>
       <div class="step-body">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeManual" onclick="setMode('manual')">Manual thresholds</button>
+          <button class="mode-btn" id="modeStdev" onclick="setMode('stdev')">σ auto-threshold</button>
+        </div>
+        <div class="stdev-info" id="stdevInfo">
+          Thresholds are set automatically from the score distribution:<br>
+          <b>HIGH</b> = score &gt; mean + 0.5σ &nbsp;·&nbsp; <b>MED</b> = mean − 0.5σ to mean + 0.5σ &nbsp;·&nbsp; <b>LOW</b> = score &lt; mean − 0.5σ
+        </div>
         <div class="thresh-row">
           <div class="field"><label>Low → Med threshold</label><input type="number" id="tLow" value="50" min="0" oninput="updateZoneTags()"></div>
           <div class="field"><label>Med → High threshold</label><input type="number" id="tHigh" value="250" min="0" oninput="updateZoneTags()"></div>
@@ -315,26 +338,23 @@
       <span style="font-size:11px;color:var(--muted)" id="resultMeta"></span>
     </div>
 
+    <!-- PEAK FOCUS ROW (styled like range summary) -->
+    <div class="range-summary" id="peakCard" style="margin-bottom:16px;border-color:var(--peak);">
+      <div class="range-head" style="grid-template-columns:1fr 1fr 1fr 1fr;background:var(--peak-bg);border-bottom-color:var(--peak);">
+        <div>Level</div><div>Scale position</div><div>Score</div><div></div>
+      </div>
+      <div class="range-row-r" id="peakRow" style="grid-template-columns:1fr 1fr 1fr 1fr;background:var(--peak-bg);">
+        <div><span class="pill peak">PEAK</span></div>
+        <div class="rr-val peak-val" id="peakScaleVal" style="color:var(--peak)">—</div>
+        <div class="rr-label" id="peakScoreVal">—</div>
+        <div class="rr-label" id="peakSub"></div>
+      </div>
+    </div>
+
     <!-- RANGE SUMMARY -->
     <div class="range-summary">
       <div class="range-head"><div>Level</div><div>Scale range</div><div>Score range</div><div>Extent</div></div>
       <div id="rangeSummary"></div>
-    </div>
-
-    <!-- SUPERIMPOSED OVERLAY -->
-    <div class="profile-card">
-      <div class="profile-header">
-        <div class="profile-name" id="chartTitle"></div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="chartPills"></div>
-      </div>
-      <div style="padding:12px;">
-        <canvas id="overlayCanvas" style="width:50%;height:auto;display:block;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;" onclick="toggleOverlaySize(this)" title="Click to enlarge"></canvas>
-        <div class="chart-legend" style="margin-top:8px;">
-          <span class="legend-item"><span class="legend-dot" style="background:#1a56c4"></span>High focus</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#b45309"></span>Medium focus</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>Low focus</span>
-        </div>
-      </div>
     </div>
 
     <!-- PROFILE CHART -->
@@ -349,38 +369,61 @@
       </div>
     </div>
 
+    <!-- SUPERIMPOSED OVERLAY + METHODOLOGY -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="profile-name" id="chartTitle"></div>
+      </div>
+      <div style="padding:12px;">
+        <canvas id="overlayCanvas" style="width:50%;height:auto;display:block;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;" onclick="toggleOverlaySize(this)" title="Click to enlarge"></canvas>
+        <div class="chart-legend" style="margin-top:8px;">
+          <span class="legend-item"><span class="legend-dot" style="background:#1a56c4"></span>High focus</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#b45309"></span>Medium focus</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>Low focus</span>
+        </div>
+      </div>
+      <div style="padding:0 12px 12px;border-top:1px solid var(--border);margin-top:4px;">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:10px 0 8px;">How sharpness is measured</div>
+        <p style="font-size:11px;color:var(--muted);line-height:1.8;max-width:640px;">
+          The dense black bar of tick lines is located automatically by finding the image column or row band
+          with the highest Laplacian variance. You then click the positions of two scale labels to set the
+          exact pixel-to-unit mapping. The bar is always treated as vertical — rotate your image in Step 1
+          if needed. Sharpness is measured by scanning along the bar and, at each position,
+          counting how many individual tick lines are resolvable in a local window — and how prominent each
+          one is. Where ticks are in focus they appear as distinct dark troughs; where blurred they merge
+          into a smooth gradient and score zero. The score at each position is
+          <em>resolved tick count × mean prominence</em>, mapped to the scale value at that pixel.
+          Peak focus reports the single highest-scoring position. In <em>σ auto-threshold</em> mode,
+          zone boundaries are set automatically from the score distribution: HIGH ≥ μ+0.5σ, LOW &lt; μ−0.5σ.
+        </p>
+        <div class="method-pills" style="margin-top:10px;">
+          <span class="method-pill" style="background:var(--peak-bg);color:var(--peak)">PEAK — highest sharpness position</span>
+          <span class="method-pill" style="background:var(--high-bg);color:var(--high)">HIGH — individual ticks clearly separated</span>
+          <span class="method-pill" style="background:var(--med-bg);color:var(--med)">MED — ticks visible but soft or partially merged</span>
+          <span class="method-pill" style="background:var(--low-bg);color:var(--low)">LOW — ticks indistinct, blurred together</span>
+        </div>
+      </div>
+    </div>
+
     <div class="result-actions">
       <button class="btn btn-primary" onclick="exportCSV()">Export CSV →</button>
       <button class="btn btn-ghost"   onclick="resetAll()">New image</button>
     </div>
   </div>
 
-  <!-- METHOD -->
-  <div class="method-note">
-    <h2>How sharpness is measured</h2>
-    <p>
-      The dense black bar of tick lines is located automatically by finding the image column or row band
-      with the highest Laplacian variance. You then click the positions of two scale labels to set the
-      exact pixel-to-unit mapping. Sharpness is measured by scanning along the bar and, at each position,
-      counting how many individual tick lines are resolvable in a local window — and how prominent each
-      one is. Where ticks are in focus they appear as distinct dark troughs; where blurred they merge
-      into a smooth gradient and score zero. The score at each position is
-      <em>resolved tick count × mean prominence</em>, mapped to the scale value at that pixel.
-    </p>
-    <div class="method-pills">
-      <span class="method-pill" style="background:var(--high-bg);color:var(--high)">HIGH — individual ticks clearly separated</span>
-      <span class="method-pill" style="background:var(--med-bg);color:var(--med)">MED — ticks visible but soft or partially merged</span>
-      <span class="method-pill" style="background:var(--low-bg);color:var(--low)">LOW — ticks indistinct, blurred together</span>
-    </div>
-  </div>
+
 
 </div>
 
 <script>
 // ── STATE ─────────────────────────────────────────────────────────────────
 let state = {
-  file: null, imgEl: null,
-  orientation: null,
+  file: null,
+  imgEl: null,
+  rotatedImgEl: null,
+  analysisImgEl: null,  // always portrait (H>W) — used for analysis and overlay
+  rotationDeg: 0,
+  orientation: 'vertical', // always vertical after rotation
   labelA: 10, labelB: 15,
   labelAPx: null, labelBPx: null,
   markStep: 0,
@@ -393,46 +436,100 @@ let state = {
 // ── STEP MANAGEMENT ───────────────────────────────────────────────────────
 function setStep(n) {
   state.currentStep = n;
-  [1,2,3,4].forEach(i => {
+  [1,2,3].forEach(i => {
     const el = document.getElementById(`step${i}`);
     el.className = 'step ' + (i === n ? 'active' : i < n ? 'done' : 'locked');
   });
 }
 
 function jumpTo(n) {
-  if (document.getElementById(`step${n}`).classList.contains('done') ||
-      document.getElementById(`step${n}`).classList.contains('active')) {
-    setStep(n);
-  }
+  const el = document.getElementById(`step${n}`);
+  if (el.classList.contains('done') || el.classList.contains('active')) setStep(n);
 }
 
-// ── STEP 1: UPLOAD ────────────────────────────────────────────────────────
+// ── ROTATION HELPERS ──────────────────────────────────────────────────────
+function rotateImageEl(srcImg, deg) {
+  // Returns a new Image element with the image rotated by deg (0/90/180/270)
+  return new Promise(resolve => {
+    const cv = document.getElementById('rotationCanvas');
+    const swap = deg === 90 || deg === 270;
+    const W = swap ? srcImg.naturalHeight : srcImg.naturalWidth;
+    const H = swap ? srcImg.naturalWidth  : srcImg.naturalHeight;
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    ctx.rotate(deg * Math.PI / 180);
+    ctx.drawImage(srcImg, -srcImg.naturalWidth/2, -srcImg.naturalHeight/2);
+    ctx.restore();
+    const url = cv.toDataURL('image/png');
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.src = url;
+  });
+}
+
+function getOrientationLabel(deg, natW, natH) {
+  const swap = deg === 90 || deg === 270;
+  const w = swap ? natH : natW;
+  const h = swap ? natW : natH;
+  return w >= h ? 'landscape — ideal orientation' : 'portrait — consider rotating 90°';
+}
+
+// ── STEP 1: UPLOAD + ROTATE ───────────────────────────────────────────────
 function onFileSelect(file) {
   if (!file) return;
   state.file = file;
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => {
+  img.onload = async () => {
     state.imgEl = img;
-    // preview
-    document.getElementById('previewImg').src = url;
-    document.getElementById('previewInfo').innerHTML =
-      `<b>${file.name}</b><br>${img.naturalWidth} × ${img.naturalHeight}px<br>${(file.size/1024).toFixed(0)} KB<br><span style="color:var(--faint)">click image to expand</span>`;
+    state.rotationDeg = 0;
+    await applyRotation(0);
+    document.getElementById('dropZone').style.display = 'none';
     document.getElementById('previewWrap').style.display = 'flex';
     document.getElementById('s1summary').textContent = file.name;
-    // set mark image
-    document.getElementById('markImg').src = url;
-    // reset mark state
-    state.markStep = 0; state.labelAPx = null; state.labelBPx = null;
-    document.getElementById('markerA').style.display = 'none';
-    document.getElementById('markerB').style.display = 'none';
-    document.getElementById('statusA').innerHTML = '— not marked';
-    document.getElementById('statusB').innerHTML = '— not marked';
-    document.getElementById('confirmRangeBtn').disabled = true;
-    document.getElementById('confirmRangeBtn').style.opacity = '0.4';
-    setStep(2);
+    document.getElementById('toStep2Btn').disabled = false;
+    resetMarkState();
   };
   img.src = url;
+}
+
+async function applyRotation(deg) {
+  state.rotationDeg = deg;
+
+  document.getElementById('rotLabel').textContent = deg + '°';
+  const icon = document.getElementById('rotIcon');
+  icon.style.transform = `rotate(${deg}deg)`;
+
+  const rotated = await rotateImageEl(state.imgEl, deg);
+  state.rotatedImgEl = rotated;
+  state.analysisImgEl = rotated; // same image — user has oriented it correctly
+
+  document.getElementById('previewImg').src = rotated.src;
+  const file = state.file;
+  document.getElementById('previewInfo').innerHTML =
+    `<b>${file.name}</b><br>${rotated.naturalWidth} × ${rotated.naturalHeight}px  ·  rot ${deg}°<br>${(file.size/1024).toFixed(0)} KB<br><span style="color:var(--faint)">click image to rotate</span>`;
+
+  const label = getOrientationLabel(deg, state.imgEl.naturalWidth, state.imgEl.naturalHeight);
+  document.getElementById('orientText').textContent = label;
+
+  document.getElementById('markImg').src = rotated.src;
+  resetMarkState();
+}
+
+async function cycleRotation() {
+  const next = (state.rotationDeg + 90) % 360;
+  await applyRotation(next);
+}
+
+function goToStep2() {
+  document.getElementById('s1summary').textContent =
+    state.file.name + (state.rotationDeg ? ` · ${state.rotationDeg}°` : '');
+  setStep(2);
+  initMarkListeners();
+  updateMarkCursor();
 }
 
 function onDrop(e) {
@@ -445,34 +542,63 @@ function dz(e, add) {
   document.getElementById('dropZone').classList[add ? 'add' : 'remove']('over');
 }
 
-// ── STEP 2: ORIENTATION ───────────────────────────────────────────────────
-function selectOrient(o) {
-  state.orientation = o;
-  document.getElementById('ob-h').classList.toggle('selected', o === 'horizontal');
-  document.getElementById('ob-v').classList.toggle('selected', o === 'vertical');
-  document.getElementById('s2summary').textContent = o;
-  setTimeout(() => { setStep(3); initMarkListeners(); }, 180);
+// ── STEP 2: MARK LABEL POSITIONS ──────────────────────────────────────────
+function resetMarkState() {
+  state.markStep = 0; state.labelAPx = null; state.labelBPx = null;
+  const mA = document.getElementById('markerA');
+  const mB = document.getElementById('markerB');
+  if (mA) mA.style.display = 'none';
+  if (mB) mB.style.display = 'none';
+  const sA = document.getElementById('statusA');
+  const sB = document.getElementById('statusB');
+  if (sA) sA.innerHTML = '— not marked';
+  if (sB) sB.innerHTML = '— not marked';
+  const btn = document.getElementById('confirmRangeBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
+  // Abort the current listener so initMarkListeners attaches a fresh one
+  if (markListenerController) { markListenerController.abort(); markListenerController = null; }
+  const wrap = document.getElementById('markWrap');
+  if (wrap) wrap._markListenerAdded = false;
+  updateMarkCursor();
 }
 
-// ── STEP 3: MARK LABEL POSITIONS ──────────────────────────────────────────
+function updateMarkCursor() {
+  const wrap = document.getElementById('markWrap');
+  if (!wrap) return;
+  const step = state.markStep;
+  wrap.style.cursor = step < 2 ? 'crosshair' : 'default';
+  const instr = document.getElementById('markInstr');
+  if (instr) {
+    if (step === 0) instr.innerHTML = 'Click the <b>first label (A)</b> position in the image.';
+    else if (step === 1) instr.innerHTML = 'Now click the <b>second label (B)</b> position.';
+    else instr.innerHTML = 'Both labels marked. Enter values below and confirm. Click image to reset.';
+  }
+}
+
+let markListenerController = null;
+
 function initMarkListeners() {
   const wrap = document.getElementById('markWrap');
   if (wrap._markListenerAdded) return;
   wrap._markListenerAdded = true;
+
+  // Abort any previous listener before adding a new one
+  if (markListenerController) markListenerController.abort();
+  markListenerController = new AbortController();
+
   wrap.addEventListener('click', e => {
-    const rect = wrap.getBoundingClientRect();
     const imgEl = document.getElementById('markImg');
-    // fraction of displayed image
+    const rect = imgEl.getBoundingClientRect();
     const fx = (e.clientX - rect.left) / rect.width;
     const fy = (e.clientY - rect.top)  / rect.height;
-    // pixel in natural image coords (scaled to MAX=1200)
+
+    const img = state.analysisImgEl || state.imgEl;
     const MAX = 1200;
-    const sc = Math.min(1, MAX / Math.max(state.imgEl.naturalWidth, state.imgEl.naturalHeight));
-    const px = fx * Math.round(state.imgEl.naturalWidth  * sc);
-    const py = fy * Math.round(state.imgEl.naturalHeight * sc);
+    const sc  = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+    const scanPx = fy * Math.round(img.naturalHeight * sc);
 
     if (state.markStep === 0) {
-      state.labelAPx = state.orientation === 'horizontal' ? px : py;
+      state.labelAPx = scanPx;
       const m = document.getElementById('markerA');
       m.style.display = 'block';
       m.style.left = (fx*100)+'%';
@@ -480,7 +606,7 @@ function initMarkListeners() {
       document.getElementById('statusA').innerHTML = `<b>marked</b>`;
       state.markStep = 1;
     } else if (state.markStep === 1) {
-      state.labelBPx = state.orientation === 'horizontal' ? px : py;
+      state.labelBPx = scanPx;
       const m = document.getElementById('markerB');
       m.style.display = 'block';
       m.style.left = (fx*100)+'%';
@@ -490,16 +616,19 @@ function initMarkListeners() {
       const btn = document.getElementById('confirmRangeBtn');
       btn.disabled = false; btn.style.opacity = '1';
     } else {
-      // reset and start over
-      state.markStep = 0; state.labelAPx = null; state.labelBPx = null;
-      document.getElementById('markerA').style.display = 'none';
-      document.getElementById('markerB').style.display = 'none';
-      document.getElementById('statusA').innerHTML = '— not marked';
-      document.getElementById('statusB').innerHTML = '— not marked';
-      const btn = document.getElementById('confirmRangeBtn');
-      btn.disabled = true; btn.style.opacity = '0.4';
+      resetMarkState();
+      initMarkListeners();
     }
-  });
+    updateMarkCursor();
+  }, { signal: markListenerController.signal });
+}
+
+function arrowStep(e, input, step) {
+  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    const val = parseFloat(input.value) || 0;
+    input.value = Math.round(val + (e.key === 'ArrowUp' ? step : -step));
+  }
 }
 
 function confirmRange() {
@@ -508,49 +637,92 @@ function confirmRange() {
   const b = parseFloat(document.getElementById('labelB').value);
   if (isNaN(a) || isNaN(b) || a === b) { alert('Enter two different label values.'); return; }
   state.labelA = a; state.labelB = b;
-  document.getElementById('s3summary').textContent = `${a} (marked) → ${b} (marked)`;
-  setStep(4);
+  document.getElementById('s2summary').textContent = `${a} → ${b}`;
+  setStep(3);
   updateZoneTags();
 }
 
-// ── STEP 4: RUN ───────────────────────────────────────────────────────────
-function toggleOverlaySize(el) {
-  if (el.style.width === '100%') {
-    el.style.width = '50%';
-    el.style.cursor = 'zoom-in';
+// ── STEP 3: RUN ───────────────────────────────────────────────────────────
+let analysisMode = 'manual'; // 'manual' | 'stdev'
+let stdevThresholds = { tL: null, tH: null }; // computed after first run in stdev mode
+
+function setMode(m) {
+  analysisMode = m;
+  document.getElementById('modeManual').classList.toggle('active', m === 'manual');
+  document.getElementById('modeStdev').classList.toggle('active', m === 'stdev');
+  const tLow  = document.getElementById('tLow');
+  const tHigh = document.getElementById('tHigh');
+  const stdevInfo = document.getElementById('stdevInfo');
+  if (m === 'stdev') {
+    tLow.disabled = true; tHigh.disabled = true;
+    stdevInfo.style.display = 'block';
   } else {
-    el.style.width = '100%';
-    el.style.cursor = 'zoom-out';
+    tLow.disabled = false; tHigh.disabled = false;
+    stdevInfo.style.display = 'none';
+    stdevThresholds = { tL: null, tH: null };
   }
+  updateZoneTags();
+}
+
+function toggleOverlaySize(el) {
+  el.style.width = el.style.width === '100%' ? '50%' : '100%';
+  el.style.cursor = el.style.width === '100%' ? 'zoom-out' : 'zoom-in';
 }
 
 function updateZoneTags() {
   const tL=getTL(), tH=getTH();
+  const stdev = analysisMode === 'stdev';
   document.getElementById('zoneTags').innerHTML = `
-    <span class="zone-tag high">HIGH ≥ ${tH}</span>
-    <span class="zone-tag med">MED ${tL}–${tH}</span>
-    <span class="zone-tag low">LOW &lt; ${tL}</span>`;
+    <span class="zone-tag high">HIGH ≥ ${stdev ? (stdevThresholds.tH!=null ? stdevThresholds.tH.toFixed(1) : 'μ+0.5σ') : tH}</span>
+    <span class="zone-tag med">MED ${stdev ? (stdevThresholds.tL!=null ? stdevThresholds.tL.toFixed(1) : 'μ−0.5σ') : tL}–${stdev ? (stdevThresholds.tH!=null ? stdevThresholds.tH.toFixed(1) : 'μ+0.5σ') : tH}</span>
+    <span class="zone-tag low">LOW &lt; ${stdev ? (stdevThresholds.tL!=null ? stdevThresholds.tL.toFixed(1) : 'μ−0.5σ') : tL}</span>`;
+}
+
+function computeStdevThresholds(profile) {
+  const scores = profile.map(p => p.score);
+  const mean = scores.reduce((a,v)=>a+v,0) / scores.length;
+  const variance = scores.reduce((a,v)=>a+(v-mean)**2,0) / scores.length;
+  const sigma = Math.sqrt(variance);
+  return { tL: Math.max(0, mean - 0.5*sigma), tH: mean + 0.5*sigma, mean, sigma };
 }
 
 function getTL() { return parseFloat(document.getElementById('tLow').value)  || 20; }
 function getTH() { return parseFloat(document.getElementById('tHigh').value) || 80; }
 
 function rate(s) {
-  if (s >= getTH()) return { cls:'high', label:'High focus',   short:'HIGH' };
-  if (s >= getTL()) return { cls:'med',  label:'Medium focus', short:'MED'  };
-  return                   { cls:'low',  label:'Low focus',    short:'LOW'  };
+  let tL, tH;
+  if (analysisMode === 'stdev' && stdevThresholds.tL != null) {
+    tL = stdevThresholds.tL; tH = stdevThresholds.tH;
+  } else {
+    tL = getTL(); tH = getTH();
+  }
+  if (s >= tH) return { cls:'high', label:'High focus',   short:'HIGH' };
+  if (s >= tL) return { cls:'med',  label:'Medium focus', short:'MED'  };
+  return               { cls:'low',  label:'Low focus',    short:'LOW'  };
 }
 
 function runAnalysis() {
-  if (!state.imgEl || !state.orientation) return;
-  const result = analyzeImage(state.imgEl, state.orientation, state.labelA, state.labelB);
-  state.profile        = result.profile;
-  state.ranges         = result.ranges;
-  state.lastBarBand0   = result.barBand0;
-  state.lastBarBand1   = result.barBand1;
+  const img = state.analysisImgEl || state.rotatedImgEl || state.imgEl;
+  if (!img) return;
+  state.orientation = 'vertical';
+  const result = analyzeImage(img, 'vertical', state.labelA, state.labelB);
+
+  // If stdev mode: compute thresholds from this profile before building ranges
+  if (analysisMode === 'stdev') {
+    const sd = computeStdevThresholds(result.profile);
+    stdevThresholds = { tL: sd.tL, tH: sd.tH };
+    // Rebuild ranges with updated thresholds
+    result.ranges = buildRanges(result.profile);
+    updateZoneTags();
+  }
+
+  state.profile         = result.profile;
+  state.ranges          = result.ranges;
+  state.lastBarBand0    = result.barBand0;
+  state.lastBarBand1    = result.barBand1;
   state.lastTickStartPx = result.tickStartPx;
   state.lastTickEndPx   = result.tickEndPx;
-  document.getElementById('s4summary').textContent = `${result.ranges.length} zones`;
+  document.getElementById('s3summary').textContent = `${result.ranges.length} zones`;
   showResults();
 }
 
@@ -566,7 +738,7 @@ function smooth1D(arr, w) {
 }
 
 function analyzeImage(imgEl, orientation, lA, lB) {
-  const cv = document.getElementById('analysisCanvas');
+  const cv  = document.getElementById('analysisCanvas');
   const ctx = cv.getContext('2d');
   const MAX = 1200;
   const sc  = Math.min(1, MAX / Math.max(imgEl.naturalWidth, imgEl.naturalHeight));
@@ -576,14 +748,12 @@ function analyzeImage(imgEl, orientation, lA, lB) {
   ctx.drawImage(imgEl, 0, 0, W, H);
   const { data } = ctx.getImageData(0,0,W,H);
 
-  // grayscale
   const g = new Float32Array(W*H);
   for (let i=0; i<W*H; i++) {
     const p=i*4;
     g[i] = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
   }
 
-  // per-pixel laplacian
   const lap = new Float32Array(W*H);
   for (let y=1; y<H-1; y++) for (let x=1; x<W-1; x++) {
     const i=y*W+x;
@@ -591,7 +761,7 @@ function analyzeImage(imgEl, orientation, lA, lB) {
   }
   const lap2 = lap.map(v=>v*v);
 
-  // ── STEP 1: Find bar using TIGHT threshold (70% of max) on user-specified axis ──
+  // Find bar band
   let barBand0, barBand1;
   if (orientation === 'horizontal') {
     const rowLap = new Float32Array(H);
@@ -611,52 +781,39 @@ function analyzeImage(imgEl, orientation, lA, lB) {
     barBand1 = band.length ? band[band.length-1]: W-1;
   }
 
-  // ── STEP 2: Detect bar tilt — fit a line through peak positions across bar width ──
-  // The bar is on a physical scale that may be tilted in the image.
-  // We sample at N cross-sections across the bar, find where sharpness peaks,
-  // then fit a line: barCenter(pos) = m*pos + b along the scan axis.
+  // Detect bar tilt
   let tiltM = 0, tiltB = 0, useTilt = false;
   const N_TILT = 16;
   if (orientation === 'vertical') {
-    // Sample at different x positions across bar width
     const xs = [], ys = [];
     const xStep = Math.max(1, Math.floor((barBand1-barBand0) / N_TILT));
     for (let x = barBand0; x <= barBand1; x += xStep) {
-      // lapvar profile along y at this x (narrow strip)
       const strip = new Float32Array(H);
       for (let y=0;y<H;y++) {
         const x0=Math.max(1,x-3), x1=Math.min(W-2,x+3);
         let s=0,s2=0,n=0;
-        for (let xi=x0;xi<=x1;xi++) {
-          const l=lap[y*W+xi]; s+=l; s2+=l*l; n++;
-        }
+        for (let xi=x0;xi<=x1;xi++) { const l=lap[y*W+xi]; s+=l; s2+=l*l; n++; }
         strip[y] = n ? s2/n - (s/n)**2 : 0;
       }
       const stripSm = smooth1D(strip, 25);
       const smMax = Math.max(...stripSm);
       if (smMax < 1) continue;
-      // Search in middle 80% of image only
       const y0 = Math.floor(H*0.05), y1 = Math.floor(H*0.95);
       let bestY = y0;
       for (let y=y0;y<=y1;y++) if (stripSm[y]>stripSm[bestY]) bestY=y;
-      // Only use if well above noise
-      if (stripSm[bestY] > smMax * 0.25) {
-        xs.push(x); ys.push(bestY);
-      }
+      if (stripSm[bestY] > smMax * 0.25) { xs.push(x); ys.push(bestY); }
     }
     if (xs.length >= 4) {
-      // Filter outliers: within 2×IQR of median y
       const sortedY = [...ys].sort((a,b)=>a-b);
-      const q1 = sortedY[Math.floor(sortedY.length*0.25)];
-      const q3 = sortedY[Math.floor(sortedY.length*0.75)];
-      const iqr = Math.max(q3-q1, H*0.05);
-      const medY = sortedY[Math.floor(sortedY.length/2)];
-      const filtX=[], filtY=[];
+      const q1=sortedY[Math.floor(sortedY.length*0.25)];
+      const q3=sortedY[Math.floor(sortedY.length*0.75)];
+      const iqr=Math.max(q3-q1, H*0.05);
+      const medY=sortedY[Math.floor(sortedY.length/2)];
+      const filtX=[],filtY=[];
       for (let i=0;i<xs.length;i++) {
         if (Math.abs(ys[i]-medY) <= iqr*2) { filtX.push(xs[i]); filtY.push(ys[i]); }
       }
       if (filtX.length >= 3) {
-        // Fit x = m*y + b  (we want: given y on scan axis, what x is bar center?)
         const n=filtX.length;
         const sumY=filtY.reduce((a,v)=>a+v,0), sumX=filtX.reduce((a,v)=>a+v,0);
         const sumY2=filtY.reduce((a,v)=>a+v*v,0), sumXY=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
@@ -669,17 +826,14 @@ function analyzeImage(imgEl, orientation, lA, lB) {
       }
     }
   } else {
-    // Horizontal: sample at different y positions, find peak x
-    const xs=[], ys=[];
+    const xs=[],ys=[];
     const yStep = Math.max(1, Math.floor((barBand1-barBand0)/N_TILT));
     for (let y=barBand0; y<=barBand1; y+=yStep) {
       const strip = new Float32Array(W);
       for (let x=0;x<W;x++) {
         const y0=Math.max(1,y-3),y1=Math.min(H-2,y+3);
         let s=0,s2=0,n=0;
-        for (let yi=y0;yi<=y1;yi++) {
-          const l=lap[yi*W+x]; s+=l; s2+=l*l; n++;
-        }
+        for (let yi=y0;yi<=y1;yi++) { const l=lap[yi*W+x]; s+=l; s2+=l*l; n++; }
         strip[x]=n?s2/n-(s/n)**2:0;
       }
       const stripSm=smooth1D(strip,25);
@@ -703,28 +857,17 @@ function analyzeImage(imgEl, orientation, lA, lB) {
       if(filtX.length>=3){
         const n=filtX.length;
         const sumY=filtY.reduce((a,v)=>a+v,0),sumX=filtX.reduce((a,v)=>a+v,0);
-        const sumY2=filtY.reduce((a,v)=>a+v*v,0),sumXY=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
-        const denom=n*sumY2-sumY*sumY;
-        if(Math.abs(denom)>1e-6){
-          // y = m*x + b  → given x on scan axis, find bar center y
-          // Actually fit x=f(y): rearrange
-          // Fit y=m*x+b directly:
-          const sumX2=filtX.reduce((a,v)=>a+v*v,0);
-          const sumYX=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
-          const d2=n*sumX2-sumX*sumX;
-          if(Math.abs(d2)>1e-6){
-            tiltM=(n*sumYX-sumY*sumX)/d2;
-            tiltB=(sumY-tiltM*sumX)/n;
-            useTilt=true;
-          }
+        const sumX2=filtX.reduce((a,v)=>a+v*v,0);
+        const sumYX=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
+        const d2=n*sumX2-sumX*sumX;
+        if(Math.abs(d2)>1e-6){
+          tiltM=(n*sumYX-sumY*sumX)/d2;
+          tiltB=(sumY-tiltM*sumX)/n;
+          useTilt=true;
         }
       }
     }
   }
-
-  // ── STEP 3: Build axis brightness profile using user-marked label positions ──
-  // labelAPx and labelBPx are the pixel positions the user clicked for lA and lB.
-  // pxPerUnit is derived directly from those, giving exact calibration.
 
   const STRIP_HALF = 20;
   const axisLen = orientation === 'horizontal' ? W : H;
@@ -748,26 +891,19 @@ function analyzeImage(imgEl, orientation, lA, lB) {
     }
   }
 
-  // Invert: dark tick lines → peaks
   const invProfile = new Float32Array(axisLen);
   for (let i = 0; i < axisLen; i++) invProfile[i] = 255 - axisProfile[i];
 
-  // Use user-marked positions as exact anchors for lA and lB
   const tickStartPx = Math.round(state.labelAPx != null ? state.labelAPx : axisLen * 0.2);
   const tickEndPx   = Math.round(state.labelBPx != null ? state.labelBPx : axisLen * 0.8);
-  const pxPerUnit   = Math.abs(tickEndPx - tickStartPx) / Math.max(1, Math.abs(lB - lA));
+  // signed span: tickStartPx↔lA, tickEndPx↔lB — works in either click order
+  const pxSpan    = tickEndPx - tickStartPx; // may be negative
+  const pxPerUnit = Math.abs(pxSpan) / Math.max(1, Math.abs(lB - lA));
 
-  // Extend scan ±3 units beyond the marked range
   const extPx    = Math.round(3 * pxPerUnit);
   const scaleStart = Math.max(0, Math.min(tickStartPx, tickEndPx) - extPx);
   const scaleEnd   = Math.min(axisLen - 1, Math.max(tickStartPx, tickEndPx) + extPx);
-  const span       = Math.max(1, Math.abs(tickEndPx - tickStartPx));
   const minDist    = Math.max(2, Math.floor(axisLen / 300));
-
-  // ── STEP 4: Tick resolution score at each position ──
-  // Profile is already built in axisProfile/invProfile.
-  // At each scan position, look at a local window and count resolvable tick peaks.
-  // Score = nTicks × meanProminence. Zero where ticks are blurred together.
 
   const STEP = 2;
   const TICK_WINDOW = Math.max(20, Math.round(pxPerUnit * 0.5));
@@ -793,20 +929,21 @@ function analyzeImage(imgEl, orientation, lA, lB) {
       if (prom >= 6) prominences.push(prom);
     }
 
-    const nPeaks  = prominences.length;
+    const nPeaks   = prominences.length;
     const meanProm = nPeaks > 0 ? prominences.reduce((a,v)=>a+v,0)/nPeaks : 0;
-    const score   = Math.round(nPeaks * meanProm * 10) / 10;
+    const score    = Math.round(nPeaks * meanProm * 10) / 10;
 
-    // Map pixel position to scale value: tickStartPx → lA, tickEndPx → lB
-    const t  = (pos - tickStartPx) / Math.max(1, tickEndPx - tickStartPx);
+    const t  = (pos - tickStartPx) / (pxSpan || 1);
     const sv = Math.round((lA + t*(lB-lA))*10)/10;
     profile.push({ scaleVal: sv, score });
   }
 
-  // Light smoothing
   const raw = new Float32Array(profile.map(p=>p.score));
   const sm  = smooth1D(raw, 5);
+  // profile is already in scan order (low Y → high Y); scaleVal may decrease if
+  // the user clicked high-value at top. Sort ascending so charts and ranges work correctly.
   const smoothed = profile.map((p,i)=>({ scaleVal:p.scaleVal, score:Math.round(sm[i]*10)/10 }));
+  smoothed.sort((a,b) => a.scaleVal - b.scaleVal);
 
   return { profile: smoothed, ranges: buildRanges(smoothed), barBand0, barBand1, tickStartPx, tickEndPx };
 }
@@ -829,21 +966,25 @@ function buildRanges(profile) {
   return out;
 }
 
+// ── PEAK FOCUS ─────────────────────────────────────────────────────────────
+function computePeak(profile) {
+  if (!profile || !profile.length) return null;
+  let best = profile[0];
+  for (const p of profile) if (p.score > best.score) best = p;
+  return best;
+}
+
 function showResults() {
   const resultsEl = document.getElementById('results');
   const firstRun = resultsEl.style.display === 'none' || resultsEl.style.display === '';
   resultsEl.style.display = 'block';
   if (firstRun) resultsEl.scrollIntoView({ behavior:'smooth', block:'start' });
 
-  const { ranges, profile, labelA, labelB, file, orientation } = state;
+  const { ranges, profile, labelA, labelB, file } = state;
 
   document.getElementById('resultMeta').textContent =
-    `${orientation} bar · ${labelA} → ${labelB} · ${ranges.length} zones`;
+    `vertical bar · ${labelA} → ${labelB} · ${ranges.length} zones · ${analysisMode === 'stdev' ? 'σ-threshold' : 'manual'}`;
   document.getElementById('chartTitle').textContent = file ? file.name : '';
-
-  document.getElementById('chartPills').innerHTML = ranges.map(r =>
-    `<span class="pill ${r.cls}">${r.short} ${r.start.toFixed(1)}${r.start!==r.end?'–'+r.end.toFixed(1):''}</span>`
-  ).join('');
 
   document.getElementById('rangeSummary').innerHTML = ranges.map(r => `
     <div class="range-row-r" style="border-bottom:1px solid var(--border);">
@@ -853,9 +994,19 @@ function showResults() {
       <div class="rr-label">${Math.abs(r.end-r.start).toFixed(1)} units</div>
     </div>`).join('');
 
+  // Peak focus — render as range-row style
+  const peak = computePeak(profile);
+  if (peak) {
+    document.getElementById('peakScaleVal').textContent = peak.scaleVal.toFixed(2);
+    document.getElementById('peakScoreVal').textContent = peak.score.toFixed(1);
+    const r = rate(peak.score);
+    document.getElementById('peakSub').textContent = r.label;
+  }
+
   requestAnimationFrame(() => {
-    drawOverlay(document.getElementById('overlayCanvas'), state.imgEl, profile, state.orientation, state.lastBarBand0, state.lastBarBand1, state.lastTickStartPx, state.lastTickEndPx, state.labelA, state.labelB);
-    drawChart(document.getElementById('profileChart'), profile);
+    const img = state.analysisImgEl || state.rotatedImgEl || state.imgEl;
+    drawOverlay(document.getElementById('overlayCanvas'), img, profile, 'vertical', state.lastBarBand0, state.lastBarBand1, state.lastTickStartPx, state.lastTickEndPx, state.labelA, state.labelB);
+    drawChart(document.getElementById('profileChart'), profile, peak);
   });
 }
 
@@ -867,37 +1018,27 @@ function drawOverlay(canvas, imgEl, profile, orientation, barBand0, barBand1, ti
   const IH = Math.round(imgEl.naturalHeight * sc);
   canvas.width = IW; canvas.height = IH;
   const ctx = canvas.getContext('2d');
-
   ctx.drawImage(imgEl, 0, 0, IW, IH);
   if (!profile || !profile.length) return;
 
   const colSolid = { high:'rgba(26,86,196,1)',    med:'rgba(180,83,9,1)',    low:'rgba(192,57,43,1)'    };
   const colFill  = { high:'rgba(26,86,196,0.60)', med:'rgba(180,83,9,0.60)', low:'rgba(192,57,43,0.60)' };
 
-  const tickSpan = Math.max(1, tickEndPx - tickStartPx);
-  const svToPx = sv => tickStartPx + (sv - lA) / Math.max(1e-6, lB - lA) * tickSpan;
+  // tickStartPx/tickEndPx correspond to lA/lB — may be in any order
+  const tickSpan = tickEndPx - tickStartPx; // signed — preserves direction
+  const svToPx = sv => tickStartPx + (sv - lA) / (lB - lA || 1) * tickSpan;
 
   const barThick = Math.abs(barBand1 - barBand0);
+  const ovThick  = Math.round(barThick * 0.85);
+  const ovGap    = Math.round(barThick * 0.08);
 
-  // ── Offset region: black non-important area adjacent to bar ──────────
-  // For horizontal bar: black area is BELOW barBand1 (the image background below the bar).
-  // For vertical bar: black area is to the LEFT of barBand0.
-  // Overlay strip height/width = same as bar thickness, offset just outside it.
-  const ovThick  = Math.round(barThick * 0.85);  // overlay strip thickness
-  const ovGap    = Math.round(barThick * 0.08);   // small gap between bar edge and overlay
-
-  // Overlay cross-axis start/end (in the offset black region)
-  let ovStart, ovEnd; // cross-axis pixel range of the overlay strip
+  let ovStart, ovEnd;
   if (orientation === 'horizontal') {
-    // place overlay BELOW the bar
     ovStart = barBand1 + ovGap;
-    ovEnd   = ovStart + ovThick;
-    ovEnd   = Math.min(IH - 1, ovEnd);
+    ovEnd   = Math.min(IH - 1, ovStart + ovThick);
   } else {
-    // place overlay to the LEFT of the bar
-    ovStart = barBand0 - ovGap - ovThick;
+    ovStart = Math.max(0, barBand0 - ovGap - ovThick);
     ovEnd   = barBand0 - ovGap;
-    ovStart = Math.max(0, ovStart);
   }
   const ovThickActual = ovEnd - ovStart;
   const ovCentre = Math.round((ovStart + ovEnd) / 2);
@@ -907,10 +1048,8 @@ function drawOverlay(canvas, imgEl, profile, orientation, barBand0, barBand1, ti
   const minSv = Math.ceil(Math.min(...profile.map(p=>p.scaleVal)));
   const maxSv = Math.floor(Math.max(...profile.map(p=>p.scaleVal)));
   const axLen  = orientation === 'horizontal' ? IW : IH;
-  const stripPx0 = Math.max(0, Math.round(svToPx(minSv - 0.5)));
-  const stripPx1 = Math.min(axLen - 1, Math.round(svToPx(maxSv + 0.5)));
 
-  // ── coloured fill stripes in the offset region ────────────────────────
+  // coloured fill stripes
   for (let i = 0; i < profile.length - 1; i++) {
     const p = profile[i], pNext = profile[i+1];
     const r = rate(p.score);
@@ -924,9 +1063,7 @@ function drawOverlay(canvas, imgEl, profile, orientation, barBand0, barBand1, ti
     }
   }
 
-  const lblCentre = ovCentre;
-
-  // ── integer labels + dividers ─────────────────────────────────────────
+  // integer labels + dividers
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   ctx.font = `500 ${fontSize}px IBM Plex Mono, monospace`;
@@ -939,7 +1076,6 @@ function drawOverlay(canvas, imgEl, profile, orientation, barBand0, barBand1, ti
     const r = rate(closest.score);
     const solid = colSolid[r.cls];
 
-    // thin divider across full overlay thickness
     ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 0.8;
     ctx.beginPath();
@@ -950,49 +1086,68 @@ function drawOverlay(canvas, imgEl, profile, orientation, barBand0, barBand1, ti
     }
     ctx.stroke();
 
-    // label
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     if (orientation === 'horizontal') {
-      ctx.fillText(sv, px+1, lblCentre+1);
+      ctx.fillText(sv, px+1, ovCentre+1);
       ctx.fillStyle = solid;
-      ctx.fillText(sv, px, lblCentre);
+      ctx.fillText(sv, px, ovCentre);
     } else {
-      ctx.fillText(sv, lblCentre+1, px+1);
+      ctx.fillText(sv, ovCentre+1, px+1);
       ctx.fillStyle = solid;
-      ctx.fillText(sv, lblCentre, px);
+      ctx.fillText(sv, ovCentre, px);
     }
   }
+
 }
 
-function drawChart(canvas, profile) {
+function drawChart(canvas, profile, peak) {
   const W = canvas.parentElement.offsetWidth - 4, H = 160;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
   if (!profile||!profile.length) return;
 
-  const tL=getTL(), tH=getTH();
-  const maxScore=Math.max(...profile.map(p=>p.score), tH*1.5)||1;
+  // Resolve thresholds (manual or stdev)
+  let tL, tH;
+  if (analysisMode === 'stdev' && stdevThresholds.tL != null) {
+    tL = stdevThresholds.tL; tH = stdevThresholds.tH;
+  } else {
+    tL = getTL(); tH = getTH();
+  }
+
+  const maxRaw = Math.max(...profile.map(p=>p.score));
+  // Y axis top: whichever is larger — the highest score or tH + 20% headroom
+  const maxScore = Math.max(maxRaw, tH * 1.15) || 1;
+  // Y axis bottom: 0, unless all scores are well above tL (keep tL visible)
+  const minScore = 0;
+
   const minVal=Math.min(...profile.map(p=>p.scaleVal));
   const maxVal=Math.max(...profile.map(p=>p.scaleVal));
   const valSpan=maxVal-minVal||1;
-  const pad={t:10,b:28,l:10,r:10};
+  const pad={t:14,b:28,l:36,r:10};
   const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
   const xOf=v=>pad.l+((v-minVal)/valSpan)*cW;
-  const yOf=s=>pad.t+cH-(Math.min(s,maxScore)/maxScore)*cH;
+  const yOf=s=>pad.t+cH-((s-minScore)/Math.max(1,maxScore-minScore))*cH;
 
-  // bg bands
-  ctx.fillStyle='rgba(26,86,196,0.06)';  ctx.fillRect(pad.l,yOf(maxScore),cW,yOf(tH)-yOf(maxScore));
-  ctx.fillStyle='rgba(180,83,9,0.06)';   ctx.fillRect(pad.l,yOf(tH),cW,yOf(tL)-yOf(tH));
-  ctx.fillStyle='rgba(192,57,43,0.06)';  ctx.fillRect(pad.l,yOf(tL),cW,cH-(yOf(tL)-pad.t));
+  // bg bands — clipped to chart area
+  ctx.fillStyle='rgba(26,86,196,0.06)';  ctx.fillRect(pad.l, yOf(maxScore), cW, yOf(tH)-yOf(maxScore));
+  ctx.fillStyle='rgba(180,83,9,0.06)';   ctx.fillRect(pad.l, yOf(tH),       cW, yOf(tL)-yOf(tH));
+  ctx.fillStyle='rgba(192,57,43,0.06)';  ctx.fillRect(pad.l, yOf(tL),        cW, yOf(minScore)-yOf(tL));
+
+  // Y axis labels (left margin)
+  ctx.fillStyle='#888882'; ctx.font='9px IBM Plex Mono,monospace'; ctx.textAlign='right';
+  [0, tL, tH].forEach(v => {
+    const y = yOf(v);
+    if (y < pad.t || y > pad.t+cH) return;
+    ctx.fillText(Math.round(v), pad.l-4, y+3);
+  });
 
   // threshold lines
   [[tL,'#b45309'],[tH,'#1a56c4']].forEach(([v,col])=>{
+    const y = yOf(v);
     ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash([4,3]);
-    ctx.beginPath(); ctx.moveTo(pad.l,yOf(v)); ctx.lineTo(pad.l+cW,yOf(v)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+cW, y); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle=col; ctx.font='9px IBM Plex Mono,monospace'; ctx.textAlign='left';
-    ctx.fillText(v, pad.l+2, yOf(v)-2);
   });
 
   // profile line, colored by rating
@@ -1004,6 +1159,36 @@ function drawChart(canvas, profile) {
     ctx.moveTo(xOf(profile[i-1].scaleVal), yOf(profile[i-1].score));
     ctx.lineTo(xOf(profile[i].scaleVal),   yOf(profile[i].score));
     ctx.stroke();
+  }
+
+  // Peak marker on chart
+  if (peak) {
+    const px = xOf(peak.scaleVal);
+    const py = yOf(peak.score);
+
+    // vertical line
+    ctx.strokeStyle = 'rgba(15,122,74,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.moveTo(px, pad.t);
+    ctx.lineTo(px, pad.t+cH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // diamond
+    const dm = 5;
+    ctx.fillStyle = '#0f7a4a';
+    ctx.beginPath();
+    ctx.moveTo(px, py-dm); ctx.lineTo(px+dm, py); ctx.lineTo(px, py+dm); ctx.lineTo(px-dm, py);
+    ctx.closePath();
+    ctx.fill();
+
+    // label
+    ctx.fillStyle = '#0f7a4a';
+    ctx.font = '500 9px IBM Plex Mono,monospace';
+    ctx.textAlign = px > W*0.75 ? 'right' : 'left';
+    ctx.fillText(`peak ${peak.scaleVal.toFixed(1)}`, px + (px > W*0.75 ? -8 : 8), py - 8);
   }
 
   // x axis labels
@@ -1020,10 +1205,11 @@ function drawChart(canvas, profile) {
 // ── EXPORT ────────────────────────────────────────────────────────────────
 function exportCSV() {
   if (!state.profile) return;
-  const rows=[['Scale Value','Sharpness Score','Rating','Label']];
+  const peak = computePeak(state.profile);
+  const rows=[['Scale Value','Sharpness Score','Rating','Label','Peak']];
   state.profile.forEach(p=>{
     const r=rate(p.score);
-    rows.push([p.scaleVal.toFixed(1), p.score.toFixed(1), r.short, r.label]);
+    rows.push([p.scaleVal.toFixed(1), p.score.toFixed(1), r.short, r.label, peak && p.scaleVal === peak.scaleVal ? 'YES' : '']);
   });
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');
@@ -1032,22 +1218,29 @@ function exportCSV() {
 }
 
 function resetAll() {
-  state = { file:null, imgEl:null, orientation:null, labelA:10, labelB:15,
+  state = { file:null, imgEl:null, rotatedImgEl:null, analysisImgEl:null, rotationDeg:0,
+            orientation:'vertical', labelA:10, labelB:15,
             labelAPx:null, labelBPx:null, markStep:0,
             profile:null, ranges:null, currentStep:1,
             lastBarBand0:null, lastBarBand1:null, lastTickStartPx:null, lastTickEndPx:null };
+  stdevThresholds = { tL: null, tH: null };
+  document.getElementById('dropZone').style.display = '';
   document.getElementById('previewWrap').style.display='none';
-  ['s1summary','s2summary','s3summary','s4summary'].forEach(id => document.getElementById(id).textContent='');
-  document.getElementById('ob-h').classList.remove('selected');
-  document.getElementById('ob-v').classList.remove('selected');
+  ['s1summary','s2summary','s3summary'].forEach(id => document.getElementById(id).textContent='');
+  document.getElementById('rotLabel').textContent = '0°';
+  document.getElementById('rotIcon').style.transform = 'rotate(0deg)';
+  document.getElementById('orientText').textContent = '—';
   document.getElementById('markerA').style.display='none';
   document.getElementById('markerB').style.display='none';
   document.getElementById('statusA').innerHTML='— not marked';
   document.getElementById('statusB').innerHTML='— not marked';
   const btn = document.getElementById('confirmRangeBtn');
   btn.disabled=true; btn.style.opacity='0.4';
+  document.getElementById('toStep2Btn').disabled=true;
   document.getElementById('results').style.display='none';
   document.getElementById('fi').value='';
+  // reset mode to manual
+  setMode('manual');
   setStep(1);
 }
 
