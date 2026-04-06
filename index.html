@@ -102,15 +102,31 @@
   .orient-btn .ob-desc  { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
 
   /* ── STEP 3: RANGE ── */
-  .range-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .range-row label { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
-  .range-row input {
-    width: 80px; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 5px; font-family: var(--mono); font-size: 14px;
-    padding: 6px 8px; color: var(--text); outline: none;
+  .mark-wrap { position: relative; display: inline-block; width: 100%; cursor: crosshair; user-select: none; }
+  .mark-wrap img { width: 100%; height: auto; display: block; border-radius: 5px; border: 1px solid var(--border); }
+  .mark-instructions { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.6; }
+  .mark-instructions b { color: var(--text); font-weight: 500; }
+  .mark-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .mark-field { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .mark-field input[type=number] {
+    width: 72px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 5px; font-family: var(--mono); font-size: 13px;
+    padding: 5px 8px; color: var(--text); outline: none;
   }
-  .range-row input:focus { border-color: var(--text); }
-  .range-arrow { font-size: 16px; color: var(--faint); }
+  .mark-field input:focus { border-color: var(--text); }
+  .mark-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.3); }
+  .mark-status { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .mark-status b { font-weight: 500; }
+  /* crosshair markers overlaid on image */
+  .crosshair {
+    position: absolute; pointer-events: none;
+    width: 20px; height: 20px; transform: translate(-50%,-50%);
+  }
+  .crosshair::before, .crosshair::after {
+    content: ''; position: absolute; background: currentColor;
+  }
+  .crosshair::before { width: 100%; height: 2px; top: 9px; left: 0; }
+  .crosshair::after  { width: 2px; height: 100%; top: 0; left: 9px; }
   .range-hint { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.6; }
 
   /* ── STEP 4: RUN ── */
@@ -244,19 +260,32 @@
     <div class="step locked" id="step3">
       <div class="step-header" onclick="jumpTo(3)">
         <div class="step-num">3</div>
-        <div class="step-label">Visible label range</div>
+        <div class="step-label">Mark label positions</div>
         <div class="step-summary" id="s3summary"></div>
       </div>
       <div class="step-body">
-        <div class="range-row">
-          <label>First label</label>
-          <input type="number" id="labelA" value="15" step="1">
-          <span class="range-arrow">→</span>
-          <label>Second label</label>
-          <input type="number" id="labelB" value="20" step="1">
-          <button class="btn btn-primary" onclick="confirmRange()">Confirm →</button>
+        <div class="mark-instructions">
+          Click directly on the <b>first label</b> in the image, then the <b>second label</b>.
+          Enter the corresponding scale values below.
         </div>
-        <div class="range-hint">Enter the two scale numbers visible in your image, in the order they appear along the bar.</div>
+        <div class="mark-wrap" id="markWrap">
+          <img id="markImg" src="" alt="" draggable="false">
+          <div class="crosshair" id="markerA" style="display:none;color:#1a56c4;"></div>
+          <div class="crosshair" id="markerB" style="display:none;color:#c0392b;"></div>
+        </div>
+        <div class="mark-row">
+          <div class="mark-field">
+            <span class="mark-dot" style="background:#1a56c4;"></span>
+            Label A value <input type="number" id="labelA" value="10" step="1">
+            <span class="mark-status" id="statusA">— not marked</span>
+          </div>
+          <div class="mark-field">
+            <span class="mark-dot" style="background:#c0392b;"></span>
+            Label B value <input type="number" id="labelB" value="15" step="1">
+            <span class="mark-status" id="statusB">— not marked</span>
+          </div>
+          <button class="btn btn-primary" onclick="confirmRange()" id="confirmRangeBtn" disabled style="opacity:0.4;">Confirm →</button>
+        </div>
       </div>
     </div>
 
@@ -269,8 +298,8 @@
       </div>
       <div class="step-body">
         <div class="thresh-row">
-          <div class="field"><label>Low → Med threshold</label><input type="number" id="tLow" value="20" min="0" oninput="updateZoneTags()"></div>
-          <div class="field"><label>Med → High threshold</label><input type="number" id="tHigh" value="80" min="0" oninput="updateZoneTags()"></div>
+          <div class="field"><label>Low → Med threshold</label><input type="number" id="tLow" value="50" min="0" oninput="updateZoneTags()"></div>
+          <div class="field"><label>Med → High threshold</label><input type="number" id="tHigh" value="250" min="0" oninput="updateZoneTags()"></div>
           <div class="zone-tags" id="zoneTags"></div>
         </div>
         <button class="btn btn-primary btn-run" onclick="runAnalysis()">Run →</button>
@@ -292,21 +321,30 @@
       <div id="rangeSummary"></div>
     </div>
 
-    <!-- PROFILE CHART -->
+    <!-- SUPERIMPOSED OVERLAY -->
     <div class="profile-card">
       <div class="profile-header">
         <div class="profile-name" id="chartTitle"></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;" id="chartPills"></div>
       </div>
+      <div style="padding:12px;">
+        <canvas id="overlayCanvas" style="width:50%;height:auto;display:block;border-radius:4px;border:1px solid var(--border);cursor:zoom-in;" onclick="toggleOverlaySize(this)" title="Click to enlarge"></canvas>
+        <div class="chart-legend" style="margin-top:8px;">
+          <span class="legend-item"><span class="legend-dot" style="background:#1a56c4"></span>High focus</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#b45309"></span>Medium focus</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>Low focus</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE CHART -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div style="font-size:11px;color:var(--muted);">Sharpness profile</div>
+      </div>
       <div class="profile-body">
-        <div class="profile-img-wrap"><img id="resultThumb" src="" alt=""></div>
         <div class="chart-wrap">
           <canvas class="chart-canvas" id="profileChart"></canvas>
-          <div class="chart-legend">
-            <span class="legend-item"><span class="legend-dot" style="background:#1a56c4"></span>High focus</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#b45309"></span>Medium focus</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#c0392b"></span>Low focus</span>
-          </div>
         </div>
       </div>
     </div>
@@ -321,18 +359,18 @@
   <div class="method-note">
     <h2>How sharpness is measured</h2>
     <p>
-      The dense black bar of tick lines is located by finding the image region with the highest
-      Laplacian variance — the sharpest spatial frequency content. The bar is then scanned
-      slice by slice along the scale axis. Each slice's Laplacian variance
-      <code>[0,1,0 / 1,−4,1 / 0,1,0]</code> is the local sharpness score, mapped to a scale
-      value using the two label positions. The result is a sharpness profile showing which
-      scale values correspond to high, medium, and low optical resolution — revealing the
-      exact focus range of your imaging setup.
+      The dense black bar of tick lines is located automatically by finding the image column or row band
+      with the highest Laplacian variance. You then click the positions of two scale labels to set the
+      exact pixel-to-unit mapping. Sharpness is measured by scanning along the bar and, at each position,
+      counting how many individual tick lines are resolvable in a local window — and how prominent each
+      one is. Where ticks are in focus they appear as distinct dark troughs; where blurred they merge
+      into a smooth gradient and score zero. The score at each position is
+      <em>resolved tick count × mean prominence</em>, mapped to the scale value at that pixel.
     </p>
     <div class="method-pills">
-      <span class="method-pill" style="background:var(--high-bg);color:var(--high)">HIGH — crisp edges, strong Laplacian response</span>
-      <span class="method-pill" style="background:var(--med-bg);color:var(--med)">MED — visible but soft edges</span>
-      <span class="method-pill" style="background:var(--low-bg);color:var(--low)">LOW — blurred, weak edge response</span>
+      <span class="method-pill" style="background:var(--high-bg);color:var(--high)">HIGH — individual ticks clearly separated</span>
+      <span class="method-pill" style="background:var(--med-bg);color:var(--med)">MED — ticks visible but soft or partially merged</span>
+      <span class="method-pill" style="background:var(--low-bg);color:var(--low)">LOW — ticks indistinct, blurred together</span>
     </div>
   </div>
 
@@ -342,10 +380,14 @@
 // ── STATE ─────────────────────────────────────────────────────────────────
 let state = {
   file: null, imgEl: null,
-  orientation: null,   // 'horizontal' | 'vertical'
-  labelA: 15, labelB: 20,
+  orientation: null,
+  labelA: 10, labelB: 15,
+  labelAPx: null, labelBPx: null,
+  markStep: 0,
   profile: null, ranges: null,
-  currentStep: 1
+  currentStep: 1,
+  lastBarBand0: null, lastBarBand1: null,
+  lastTickStartPx: null, lastTickEndPx: null
 };
 
 // ── STEP MANAGEMENT ───────────────────────────────────────────────────────
@@ -372,12 +414,22 @@ function onFileSelect(file) {
   const img = new Image();
   img.onload = () => {
     state.imgEl = img;
+    // preview
     document.getElementById('previewImg').src = url;
-    document.getElementById('resultThumb').src = url;
     document.getElementById('previewInfo').innerHTML =
       `<b>${file.name}</b><br>${img.naturalWidth} × ${img.naturalHeight}px<br>${(file.size/1024).toFixed(0)} KB<br><span style="color:var(--faint)">click image to expand</span>`;
     document.getElementById('previewWrap').style.display = 'flex';
     document.getElementById('s1summary').textContent = file.name;
+    // set mark image
+    document.getElementById('markImg').src = url;
+    // reset mark state
+    state.markStep = 0; state.labelAPx = null; state.labelBPx = null;
+    document.getElementById('markerA').style.display = 'none';
+    document.getElementById('markerB').style.display = 'none';
+    document.getElementById('statusA').innerHTML = '— not marked';
+    document.getElementById('statusB').innerHTML = '— not marked';
+    document.getElementById('confirmRangeBtn').disabled = true;
+    document.getElementById('confirmRangeBtn').style.opacity = '0.4';
     setStep(2);
   };
   img.src = url;
@@ -399,22 +451,79 @@ function selectOrient(o) {
   document.getElementById('ob-h').classList.toggle('selected', o === 'horizontal');
   document.getElementById('ob-v').classList.toggle('selected', o === 'vertical');
   document.getElementById('s2summary').textContent = o;
-  setTimeout(() => setStep(3), 180);
+  setTimeout(() => { setStep(3); initMarkListeners(); }, 180);
 }
 
-// ── STEP 3: RANGE ─────────────────────────────────────────────────────────
+// ── STEP 3: MARK LABEL POSITIONS ──────────────────────────────────────────
+function initMarkListeners() {
+  const wrap = document.getElementById('markWrap');
+  if (wrap._markListenerAdded) return;
+  wrap._markListenerAdded = true;
+  wrap.addEventListener('click', e => {
+    const rect = wrap.getBoundingClientRect();
+    const imgEl = document.getElementById('markImg');
+    // fraction of displayed image
+    const fx = (e.clientX - rect.left) / rect.width;
+    const fy = (e.clientY - rect.top)  / rect.height;
+    // pixel in natural image coords (scaled to MAX=1200)
+    const MAX = 1200;
+    const sc = Math.min(1, MAX / Math.max(state.imgEl.naturalWidth, state.imgEl.naturalHeight));
+    const px = fx * Math.round(state.imgEl.naturalWidth  * sc);
+    const py = fy * Math.round(state.imgEl.naturalHeight * sc);
+
+    if (state.markStep === 0) {
+      state.labelAPx = state.orientation === 'horizontal' ? px : py;
+      const m = document.getElementById('markerA');
+      m.style.display = 'block';
+      m.style.left = (fx*100)+'%';
+      m.style.top  = (fy*100)+'%';
+      document.getElementById('statusA').innerHTML = `<b>marked</b>`;
+      state.markStep = 1;
+    } else if (state.markStep === 1) {
+      state.labelBPx = state.orientation === 'horizontal' ? px : py;
+      const m = document.getElementById('markerB');
+      m.style.display = 'block';
+      m.style.left = (fx*100)+'%';
+      m.style.top  = (fy*100)+'%';
+      document.getElementById('statusB').innerHTML = `<b>marked</b>`;
+      state.markStep = 2;
+      const btn = document.getElementById('confirmRangeBtn');
+      btn.disabled = false; btn.style.opacity = '1';
+    } else {
+      // reset and start over
+      state.markStep = 0; state.labelAPx = null; state.labelBPx = null;
+      document.getElementById('markerA').style.display = 'none';
+      document.getElementById('markerB').style.display = 'none';
+      document.getElementById('statusA').innerHTML = '— not marked';
+      document.getElementById('statusB').innerHTML = '— not marked';
+      const btn = document.getElementById('confirmRangeBtn');
+      btn.disabled = true; btn.style.opacity = '0.4';
+    }
+  });
+}
+
 function confirmRange() {
+  if (state.labelAPx == null || state.labelBPx == null) { alert('Click on both label positions in the image first.'); return; }
   const a = parseFloat(document.getElementById('labelA').value);
   const b = parseFloat(document.getElementById('labelB').value);
   if (isNaN(a) || isNaN(b) || a === b) { alert('Enter two different label values.'); return; }
-  state.labelA = a;
-  state.labelB = b;
-  document.getElementById('s3summary').textContent = `${a} → ${b}`;
+  state.labelA = a; state.labelB = b;
+  document.getElementById('s3summary').textContent = `${a} (marked) → ${b} (marked)`;
   setStep(4);
   updateZoneTags();
 }
 
 // ── STEP 4: RUN ───────────────────────────────────────────────────────────
+function toggleOverlaySize(el) {
+  if (el.style.width === '100%') {
+    el.style.width = '50%';
+    el.style.cursor = 'zoom-in';
+  } else {
+    el.style.width = '100%';
+    el.style.cursor = 'zoom-out';
+  }
+}
+
 function updateZoneTags() {
   const tL=getTL(), tH=getTH();
   document.getElementById('zoneTags').innerHTML = `
@@ -435,8 +544,12 @@ function rate(s) {
 function runAnalysis() {
   if (!state.imgEl || !state.orientation) return;
   const result = analyzeImage(state.imgEl, state.orientation, state.labelA, state.labelB);
-  state.profile = result.profile;
-  state.ranges  = result.ranges;
+  state.profile        = result.profile;
+  state.ranges         = result.ranges;
+  state.lastBarBand0   = result.barBand0;
+  state.lastBarBand1   = result.barBand1;
+  state.lastTickStartPx = result.tickStartPx;
+  state.lastTickEndPx   = result.tickEndPx;
   document.getElementById('s4summary').textContent = `${result.ranges.length} zones`;
   showResults();
 }
@@ -470,125 +583,232 @@ function analyzeImage(imgEl, orientation, lA, lB) {
     g[i] = 0.299*data[p] + 0.587*data[p+1] + 0.114*data[p+2];
   }
 
-  // per-pixel laplacian squared
-  const lap2 = new Float32Array(W*H);
+  // per-pixel laplacian
+  const lap = new Float32Array(W*H);
   for (let y=1; y<H-1; y++) for (let x=1; x<W-1; x++) {
-    const i=y*W+x, l=g[i-W]+g[i+W]+g[i-1]+g[i+1]-4*g[i];
-    lap2[i]=l*l;
+    const i=y*W+x;
+    lap[i] = g[i-W]+g[i+W]+g[i-1]+g[i+1]-4*g[i];
   }
+  const lap2 = lap.map(v=>v*v);
 
-  // find bar band using laplacian — narrow band of high variance
+  // ── STEP 1: Find bar using TIGHT threshold (70% of max) on user-specified axis ──
   let barBand0, barBand1;
   if (orientation === 'horizontal') {
-    // bar is a horizontal stripe → find rows with highest lap variance
     const rowLap = new Float32Array(H);
     for (let y=0;y<H;y++) { let s=0; for(let x=0;x<W;x++) s+=lap2[y*W+x]; rowLap[y]=s/W; }
     const rs = smooth1D(rowLap, 60);
     const rMax = Math.max(...rs);
-    const band = rs.reduce((a,v,i)=>{ if(v>=0.4*rMax) a.push(i); return a; }, []);
-    barBand0 = band[0] ?? 0;
-    barBand1 = band[band.length-1] ?? H-1;
+    const band = rs.reduce((a,v,i)=>{ if(v>=0.70*rMax) a.push(i); return a; }, []);
+    barBand0 = band.length ? band[0]           : 0;
+    barBand1 = band.length ? band[band.length-1]: H-1;
   } else {
-    // bar is a vertical stripe → find cols with highest lap variance
     const colLap = new Float32Array(W);
     for (let x=0;x<W;x++) { let s=0; for(let y=0;y<H;y++) s+=lap2[y*W+x]; colLap[x]=s/H; }
     const cs = smooth1D(colLap, 60);
     const cMax = Math.max(...cs);
-    const band = cs.reduce((a,v,i)=>{ if(v>=0.4*cMax) a.push(i); return a; }, []);
-    barBand0 = band[0] ?? 0;
-    barBand1 = band[band.length-1] ?? W-1;
+    const band = cs.reduce((a,v,i)=>{ if(v>=0.70*cMax) a.push(i); return a; }, []);
+    barBand0 = band.length ? band[0]           : 0;
+    barBand1 = band.length ? band[band.length-1]: W-1;
   }
 
-  // lapvar for a region
-  const lapVar = (x0,y0,x1,y1) => {
-    x0=Math.max(1,x0); y0=Math.max(1,y0); x1=Math.min(W-2,x1); y1=Math.min(H-2,y1);
-    if(x1<=x0||y1<=y0) return 0;
-    let s=0,s2=0,n=0;
-    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) {
-      const i=y*W+x, l=g[i-W]+g[i+W]+g[i-1]+g[i+1]-4*g[i];
-      s+=l; s2+=l*l; n++;
-    }
-    const m=s/n; return s2/n-m*m;
-  };
-
-  // ── FIND SCALE BOUNDS: walk the sharpness profile to find where bar content starts/ends
-  // The bar tick lines only exist within lA..lB range; outside is blank or background.
-  // Map lA → first significant sharpness px, lB → last significant sharpness px.
-  let scaleStartPx, scaleEndPx;
-  {
-    // Compute per-slice sharpness along the full scan axis within bar cols/rows
-    const axisLen = orientation === 'horizontal' ? W : H;
-    const fullProfile = new Float32Array(axisLen);
-    const FSTEP = 2;
-    for (let pos = 0; pos < axisLen; pos += FSTEP) {
-      let s=0, s2=0, n=0;
-      if (orientation === 'horizontal') {
-        const x0=Math.max(1,pos-4), x1=Math.min(W-2,pos+4);
-        for (let y=Math.max(1,barBand0); y<=Math.min(H-2,barBand1); y++)
-          for (let x=x0; x<=x1; x++) {
-            const i=y*W+x, l=g[i-W]+g[i+W]+g[i-1]+g[i+1]-4*g[i];
-            s+=l; s2+=l*l; n++;
-          }
-      } else {
-        const y0=Math.max(1,pos-4), y1=Math.min(H-2,pos+4);
-        for (let x=Math.max(1,barBand0); x<=Math.min(W-2,barBand1); x++)
-          for (let y=y0; y<=y1; y++) {
-            const i=y*W+x, l=g[i-W]+g[i+W]+g[i-1]+g[i+1]-4*g[i];
-            s+=l; s2+=l*l; n++;
-          }
+  // ── STEP 2: Detect bar tilt — fit a line through peak positions across bar width ──
+  // The bar is on a physical scale that may be tilted in the image.
+  // We sample at N cross-sections across the bar, find where sharpness peaks,
+  // then fit a line: barCenter(pos) = m*pos + b along the scan axis.
+  let tiltM = 0, tiltB = 0, useTilt = false;
+  const N_TILT = 16;
+  if (orientation === 'vertical') {
+    // Sample at different x positions across bar width
+    const xs = [], ys = [];
+    const xStep = Math.max(1, Math.floor((barBand1-barBand0) / N_TILT));
+    for (let x = barBand0; x <= barBand1; x += xStep) {
+      // lapvar profile along y at this x (narrow strip)
+      const strip = new Float32Array(H);
+      for (let y=0;y<H;y++) {
+        const x0=Math.max(1,x-3), x1=Math.min(W-2,x+3);
+        let s=0,s2=0,n=0;
+        for (let xi=x0;xi<=x1;xi++) {
+          const l=lap[y*W+xi]; s+=l; s2+=l*l; n++;
+        }
+        strip[y] = n ? s2/n - (s/n)**2 : 0;
       }
-      if (n) { const m=s/n; fullProfile[pos]=s2/n-m*m; }
-      // fill gaps
-      for (let k=1; k<FSTEP && pos+k<axisLen; k++) fullProfile[pos+k]=fullProfile[pos];
+      const stripSm = smooth1D(strip, 25);
+      const smMax = Math.max(...stripSm);
+      if (smMax < 1) continue;
+      // Search in middle 80% of image only
+      const y0 = Math.floor(H*0.05), y1 = Math.floor(H*0.95);
+      let bestY = y0;
+      for (let y=y0;y<=y1;y++) if (stripSm[y]>stripSm[bestY]) bestY=y;
+      // Only use if well above noise
+      if (stripSm[bestY] > smMax * 0.25) {
+        xs.push(x); ys.push(bestY);
+      }
     }
-
-    // Smooth heavily
-    const fpSmooth = smooth1D(fullProfile, 40);
-    const fpMax = Math.max(...fpSmooth);
-    const fpBg  = fpMax * 0.08; // 8% of peak = background threshold
-
-    // Find peak, then walk outward until we drop to background
-    let peakPx = 0;
-    for (let i=1; i<axisLen; i++) if (fpSmooth[i] > fpSmooth[peakPx]) peakPx = i;
-
-    let left = peakPx;
-    while (left > 0 && fpSmooth[left] >= fpBg) left--;
-    let right = peakPx;
-    while (right < axisLen-1 && fpSmooth[right] >= fpBg) right++;
-
-    scaleStartPx = left;
-    scaleEndPx   = right;
-  }
-
-  // scan slice by slice — only within scale bounds, mapped lA→scaleStartPx, lB→scaleEndPx
-  const STEP = 3;
-  const profile = [];
-  const scanStart = orientation === 'horizontal' ? scaleStartPx : scaleStartPx;
-  const scanEnd   = orientation === 'horizontal' ? scaleEndPx   : scaleEndPx;
-  const scanSpan  = Math.max(1, scanEnd - scanStart);
-
-  if (orientation === 'horizontal') {
-    for (let x = scanStart; x <= scanEnd; x += STEP) {
-      const score = lapVar(Math.max(1,x-STEP), barBand0, Math.min(W-2,x+STEP), barBand1);
-      const t = (x - scanStart) / scanSpan;
-      const sv = lA + t * (lB - lA);
-      profile.push({ scaleVal: Math.round(sv*10)/10, score: Math.round(score*10)/10 });
+    if (xs.length >= 4) {
+      // Filter outliers: within 2×IQR of median y
+      const sortedY = [...ys].sort((a,b)=>a-b);
+      const q1 = sortedY[Math.floor(sortedY.length*0.25)];
+      const q3 = sortedY[Math.floor(sortedY.length*0.75)];
+      const iqr = Math.max(q3-q1, H*0.05);
+      const medY = sortedY[Math.floor(sortedY.length/2)];
+      const filtX=[], filtY=[];
+      for (let i=0;i<xs.length;i++) {
+        if (Math.abs(ys[i]-medY) <= iqr*2) { filtX.push(xs[i]); filtY.push(ys[i]); }
+      }
+      if (filtX.length >= 3) {
+        // Fit x = m*y + b  (we want: given y on scan axis, what x is bar center?)
+        const n=filtX.length;
+        const sumY=filtY.reduce((a,v)=>a+v,0), sumX=filtX.reduce((a,v)=>a+v,0);
+        const sumY2=filtY.reduce((a,v)=>a+v*v,0), sumXY=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
+        const denom = n*sumY2 - sumY*sumY;
+        if (Math.abs(denom) > 1e-6) {
+          tiltM = (n*sumXY - sumX*sumY) / denom;
+          tiltB = (sumX - tiltM*sumY) / n;
+          useTilt = true;
+        }
+      }
     }
   } else {
-    for (let y = scanStart; y <= scanEnd; y += STEP) {
-      const score = lapVar(barBand0, Math.max(1,y-STEP), barBand1, Math.min(H-2,y+STEP));
-      const t = (y - scanStart) / scanSpan;
-      const sv = lA + t * (lB - lA);
-      profile.push({ scaleVal: Math.round(sv*10)/10, score: Math.round(score*10)/10 });
+    // Horizontal: sample at different y positions, find peak x
+    const xs=[], ys=[];
+    const yStep = Math.max(1, Math.floor((barBand1-barBand0)/N_TILT));
+    for (let y=barBand0; y<=barBand1; y+=yStep) {
+      const strip = new Float32Array(W);
+      for (let x=0;x<W;x++) {
+        const y0=Math.max(1,y-3),y1=Math.min(H-2,y+3);
+        let s=0,s2=0,n=0;
+        for (let yi=y0;yi<=y1;yi++) {
+          const l=lap[yi*W+x]; s+=l; s2+=l*l; n++;
+        }
+        strip[x]=n?s2/n-(s/n)**2:0;
+      }
+      const stripSm=smooth1D(strip,25);
+      const smMax=Math.max(...stripSm);
+      if (smMax<1) continue;
+      const x0=Math.floor(W*0.05),x1=Math.floor(W*0.95);
+      let bestX=x0;
+      for (let x=x0;x<=x1;x++) if(stripSm[x]>stripSm[bestX]) bestX=x;
+      if (stripSm[bestX]>smMax*0.25) { ys.push(y); xs.push(bestX); }
+    }
+    if (xs.length>=4) {
+      const sortedX=[...xs].sort((a,b)=>a-b);
+      const medX=sortedX[Math.floor(sortedX.length/2)];
+      const q1=sortedX[Math.floor(sortedX.length*0.25)];
+      const q3=sortedX[Math.floor(sortedX.length*0.75)];
+      const iqr=Math.max(q3-q1,W*0.05);
+      const filtX=[],filtY=[];
+      for(let i=0;i<xs.length;i++){
+        if(Math.abs(xs[i]-medX)<=iqr*2){filtX.push(xs[i]);filtY.push(ys[i]);}
+      }
+      if(filtX.length>=3){
+        const n=filtX.length;
+        const sumY=filtY.reduce((a,v)=>a+v,0),sumX=filtX.reduce((a,v)=>a+v,0);
+        const sumY2=filtY.reduce((a,v)=>a+v*v,0),sumXY=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
+        const denom=n*sumY2-sumY*sumY;
+        if(Math.abs(denom)>1e-6){
+          // y = m*x + b  → given x on scan axis, find bar center y
+          // Actually fit x=f(y): rearrange
+          // Fit y=m*x+b directly:
+          const sumX2=filtX.reduce((a,v)=>a+v*v,0);
+          const sumYX=filtX.reduce((a,v,i)=>a+v*filtY[i],0);
+          const d2=n*sumX2-sumX*sumX;
+          if(Math.abs(d2)>1e-6){
+            tiltM=(n*sumYX-sumY*sumX)/d2;
+            tiltB=(sumY-tiltM*sumX)/n;
+            useTilt=true;
+          }
+        }
+      }
     }
   }
 
-  // smooth
+  // ── STEP 3: Build axis brightness profile using user-marked label positions ──
+  // labelAPx and labelBPx are the pixel positions the user clicked for lA and lB.
+  // pxPerUnit is derived directly from those, giving exact calibration.
+
+  const STRIP_HALF = 20;
+  const axisLen = orientation === 'horizontal' ? W : H;
+  const axisProfile = new Float32Array(axisLen);
+
+  if (orientation === 'horizontal') {
+    for (let x = 0; x < W; x++) {
+      let sum = 0, n = 0;
+      for (let y = Math.max(0,barBand0); y <= Math.min(H-1,barBand1); y++) {
+        sum += g[y*W+x]; n++;
+      }
+      axisProfile[x] = n ? sum/n : 128;
+    }
+  } else {
+    for (let y = 0; y < H; y++) {
+      let sum = 0, n = 0;
+      const cx = useTilt ? Math.round(tiltM*y + tiltB) : Math.round((barBand0+barBand1)/2);
+      const x0 = Math.max(0, cx - STRIP_HALF), x1 = Math.min(W-1, cx + STRIP_HALF);
+      for (let x = x0; x <= x1; x++) { sum += g[y*W+x]; n++; }
+      axisProfile[y] = n ? sum/n : 128;
+    }
+  }
+
+  // Invert: dark tick lines → peaks
+  const invProfile = new Float32Array(axisLen);
+  for (let i = 0; i < axisLen; i++) invProfile[i] = 255 - axisProfile[i];
+
+  // Use user-marked positions as exact anchors for lA and lB
+  const tickStartPx = Math.round(state.labelAPx != null ? state.labelAPx : axisLen * 0.2);
+  const tickEndPx   = Math.round(state.labelBPx != null ? state.labelBPx : axisLen * 0.8);
+  const pxPerUnit   = Math.abs(tickEndPx - tickStartPx) / Math.max(1, Math.abs(lB - lA));
+
+  // Extend scan ±3 units beyond the marked range
+  const extPx    = Math.round(3 * pxPerUnit);
+  const scaleStart = Math.max(0, Math.min(tickStartPx, tickEndPx) - extPx);
+  const scaleEnd   = Math.min(axisLen - 1, Math.max(tickStartPx, tickEndPx) + extPx);
+  const span       = Math.max(1, Math.abs(tickEndPx - tickStartPx));
+  const minDist    = Math.max(2, Math.floor(axisLen / 300));
+
+  // ── STEP 4: Tick resolution score at each position ──
+  // Profile is already built in axisProfile/invProfile.
+  // At each scan position, look at a local window and count resolvable tick peaks.
+  // Score = nTicks × meanProminence. Zero where ticks are blurred together.
+
+  const STEP = 2;
+  const TICK_WINDOW = Math.max(20, Math.round(pxPerUnit * 0.5));
+  const profile = [];
+
+  for (let pos = scaleStart; pos <= scaleEnd; pos += STEP) {
+    const p0 = Math.max(0, pos - TICK_WINDOW);
+    const p1 = Math.min(axisLen - 1, pos + TICK_WINDOW);
+    const N = p1 - p0 + 1;
+
+    const prominences = [];
+    for (let i = minDist; i < N - minDist; i++) {
+      const vi = invProfile[p0 + i];
+      let isMax = true;
+      for (let j = i - minDist; j <= i + minDist; j++) {
+        if (j !== i && invProfile[p0+j] >= vi) { isMax = false; break; }
+      }
+      if (!isMax) continue;
+      let lm = vi, rm = vi;
+      for (let j = Math.max(0, i-minDist*4); j < i; j++) lm = Math.min(lm, invProfile[p0+j]);
+      for (let j = i+1; j <= Math.min(N-1, i+minDist*4); j++) rm = Math.min(rm, invProfile[p0+j]);
+      const prom = vi - Math.max(lm, rm);
+      if (prom >= 6) prominences.push(prom);
+    }
+
+    const nPeaks  = prominences.length;
+    const meanProm = nPeaks > 0 ? prominences.reduce((a,v)=>a+v,0)/nPeaks : 0;
+    const score   = Math.round(nPeaks * meanProm * 10) / 10;
+
+    // Map pixel position to scale value: tickStartPx → lA, tickEndPx → lB
+    const t  = (pos - tickStartPx) / Math.max(1, tickEndPx - tickStartPx);
+    const sv = Math.round((lA + t*(lB-lA))*10)/10;
+    profile.push({ scaleVal: sv, score });
+  }
+
+  // Light smoothing
   const raw = new Float32Array(profile.map(p=>p.score));
-  const sm  = smooth1D(raw, 15);
+  const sm  = smooth1D(raw, 5);
   const smoothed = profile.map((p,i)=>({ scaleVal:p.scaleVal, score:Math.round(sm[i]*10)/10 }));
 
-  return { profile: smoothed, ranges: buildRanges(smoothed) };
+  return { profile: smoothed, ranges: buildRanges(smoothed), barBand0, barBand1, tickStartPx, tickEndPx };
 }
 
 function buildRanges(profile) {
@@ -609,10 +829,11 @@ function buildRanges(profile) {
   return out;
 }
 
-// ── SHOW RESULTS ──────────────────────────────────────────────────────────
 function showResults() {
-  document.getElementById('results').style.display = 'block';
-  document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+  const resultsEl = document.getElementById('results');
+  const firstRun = resultsEl.style.display === 'none' || resultsEl.style.display === '';
+  resultsEl.style.display = 'block';
+  if (firstRun) resultsEl.scrollIntoView({ behavior:'smooth', block:'start' });
 
   const { ranges, profile, labelA, labelB, file, orientation } = state;
 
@@ -620,12 +841,10 @@ function showResults() {
     `${orientation} bar · ${labelA} → ${labelB} · ${ranges.length} zones`;
   document.getElementById('chartTitle').textContent = file ? file.name : '';
 
-  // pills
   document.getElementById('chartPills').innerHTML = ranges.map(r =>
     `<span class="pill ${r.cls}">${r.short} ${r.start.toFixed(1)}${r.start!==r.end?'–'+r.end.toFixed(1):''}</span>`
   ).join('');
 
-  // range summary table
   document.getElementById('rangeSummary').innerHTML = ranges.map(r => `
     <div class="range-row-r" style="border-bottom:1px solid var(--border);">
       <div><span class="pill ${r.cls}">${r.short}</span></div>
@@ -634,7 +853,115 @@ function showResults() {
       <div class="rr-label">${Math.abs(r.end-r.start).toFixed(1)} units</div>
     </div>`).join('');
 
-  requestAnimationFrame(() => drawChart(document.getElementById('profileChart'), profile));
+  requestAnimationFrame(() => {
+    drawOverlay(document.getElementById('overlayCanvas'), state.imgEl, profile, state.orientation, state.lastBarBand0, state.lastBarBand1, state.lastTickStartPx, state.lastTickEndPx, state.labelA, state.labelB);
+    drawChart(document.getElementById('profileChart'), profile);
+  });
+}
+
+function drawOverlay(canvas, imgEl, profile, orientation, barBand0, barBand1, tickStartPx, tickEndPx, lA, lB) {
+  if (!imgEl) return;
+  const MAX = 1200;
+  const sc = Math.min(1, MAX / Math.max(imgEl.naturalWidth, imgEl.naturalHeight));
+  const IW = Math.round(imgEl.naturalWidth * sc);
+  const IH = Math.round(imgEl.naturalHeight * sc);
+  canvas.width = IW; canvas.height = IH;
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(imgEl, 0, 0, IW, IH);
+  if (!profile || !profile.length) return;
+
+  const colSolid = { high:'rgba(26,86,196,1)',    med:'rgba(180,83,9,1)',    low:'rgba(192,57,43,1)'    };
+  const colFill  = { high:'rgba(26,86,196,0.60)', med:'rgba(180,83,9,0.60)', low:'rgba(192,57,43,0.60)' };
+
+  const tickSpan = Math.max(1, tickEndPx - tickStartPx);
+  const svToPx = sv => tickStartPx + (sv - lA) / Math.max(1e-6, lB - lA) * tickSpan;
+
+  const barThick = Math.abs(barBand1 - barBand0);
+
+  // ── Offset region: black non-important area adjacent to bar ──────────
+  // For horizontal bar: black area is BELOW barBand1 (the image background below the bar).
+  // For vertical bar: black area is to the LEFT of barBand0.
+  // Overlay strip height/width = same as bar thickness, offset just outside it.
+  const ovThick  = Math.round(barThick * 0.85);  // overlay strip thickness
+  const ovGap    = Math.round(barThick * 0.08);   // small gap between bar edge and overlay
+
+  // Overlay cross-axis start/end (in the offset black region)
+  let ovStart, ovEnd; // cross-axis pixel range of the overlay strip
+  if (orientation === 'horizontal') {
+    // place overlay BELOW the bar
+    ovStart = barBand1 + ovGap;
+    ovEnd   = ovStart + ovThick;
+    ovEnd   = Math.min(IH - 1, ovEnd);
+  } else {
+    // place overlay to the LEFT of the bar
+    ovStart = barBand0 - ovGap - ovThick;
+    ovEnd   = barBand0 - ovGap;
+    ovStart = Math.max(0, ovStart);
+  }
+  const ovThickActual = ovEnd - ovStart;
+  const ovCentre = Math.round((ovStart + ovEnd) / 2);
+
+  const fontSize = Math.max(10, Math.min(ovThickActual * 0.55, Math.round(IW * 0.018)));
+
+  const minSv = Math.ceil(Math.min(...profile.map(p=>p.scaleVal)));
+  const maxSv = Math.floor(Math.max(...profile.map(p=>p.scaleVal)));
+  const axLen  = orientation === 'horizontal' ? IW : IH;
+  const stripPx0 = Math.max(0, Math.round(svToPx(minSv - 0.5)));
+  const stripPx1 = Math.min(axLen - 1, Math.round(svToPx(maxSv + 0.5)));
+
+  // ── coloured fill stripes in the offset region ────────────────────────
+  for (let i = 0; i < profile.length - 1; i++) {
+    const p = profile[i], pNext = profile[i+1];
+    const r = rate(p.score);
+    const px0 = Math.round(svToPx(p.scaleVal));
+    const px1 = Math.round(svToPx(pNext.scaleVal));
+    ctx.fillStyle = colFill[r.cls];
+    if (orientation === 'horizontal') {
+      ctx.fillRect(Math.min(px0,px1), ovStart, Math.abs(px1-px0)+1, ovThickActual);
+    } else {
+      ctx.fillRect(ovStart, Math.min(px0,px1), ovThickActual, Math.abs(px1-px0)+1);
+    }
+  }
+
+  const lblCentre = ovCentre;
+
+  // ── integer labels + dividers ─────────────────────────────────────────
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.font = `500 ${fontSize}px IBM Plex Mono, monospace`;
+
+  for (let sv = minSv; sv <= maxSv; sv++) {
+    const px = Math.round(svToPx(sv));
+    if (px < 0 || px >= axLen) continue;
+
+    const closest = profile.reduce((a,b) => Math.abs(b.scaleVal-sv)<Math.abs(a.scaleVal-sv)?b:a);
+    const r = rate(closest.score);
+    const solid = colSolid[r.cls];
+
+    // thin divider across full overlay thickness
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    if (orientation === 'horizontal') {
+      ctx.moveTo(px, ovStart); ctx.lineTo(px, ovEnd);
+    } else {
+      ctx.moveTo(ovStart, px); ctx.lineTo(ovEnd, px);
+    }
+    ctx.stroke();
+
+    // label
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    if (orientation === 'horizontal') {
+      ctx.fillText(sv, px+1, lblCentre+1);
+      ctx.fillStyle = solid;
+      ctx.fillText(sv, px, lblCentre);
+    } else {
+      ctx.fillText(sv, lblCentre+1, px+1);
+      ctx.fillStyle = solid;
+      ctx.fillText(sv, lblCentre, px);
+    }
+  }
 }
 
 function drawChart(canvas, profile) {
@@ -705,14 +1032,20 @@ function exportCSV() {
 }
 
 function resetAll() {
-  state = { file:null, imgEl:null, orientation:null, labelA:15, labelB:20, profile:null, ranges:null, currentStep:1 };
+  state = { file:null, imgEl:null, orientation:null, labelA:10, labelB:15,
+            labelAPx:null, labelBPx:null, markStep:0,
+            profile:null, ranges:null, currentStep:1,
+            lastBarBand0:null, lastBarBand1:null, lastTickStartPx:null, lastTickEndPx:null };
   document.getElementById('previewWrap').style.display='none';
-  document.getElementById('s1summary').textContent='';
-  document.getElementById('s2summary').textContent='';
-  document.getElementById('s3summary').textContent='';
-  document.getElementById('s4summary').textContent='';
+  ['s1summary','s2summary','s3summary','s4summary'].forEach(id => document.getElementById(id).textContent='');
   document.getElementById('ob-h').classList.remove('selected');
   document.getElementById('ob-v').classList.remove('selected');
+  document.getElementById('markerA').style.display='none';
+  document.getElementById('markerB').style.display='none';
+  document.getElementById('statusA').innerHTML='— not marked';
+  document.getElementById('statusB').innerHTML='— not marked';
+  const btn = document.getElementById('confirmRangeBtn');
+  btn.disabled=true; btn.style.opacity='0.4';
   document.getElementById('results').style.display='none';
   document.getElementById('fi').value='';
   setStep(1);
