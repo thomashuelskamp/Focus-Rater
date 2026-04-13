@@ -385,10 +385,9 @@
       <div style="padding:0 12px 12px;border-top:1px solid var(--border);margin-top:4px;">
         <div style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:10px 0 8px;">How sharpness is measured</div>
         <p style="font-size:11px;color:var(--muted);line-height:1.8;max-width:640px;">
-          The dense black bar of tick lines is located automatically by finding the image column or row band
+          The bar of small tick lines is located by finding the image column/row band
           with the highest Laplacian variance. You then click the positions of two scale labels to set the
-          exact pixel-to-unit mapping. The bar is always treated as vertical — rotate your image in Step 1
-          if needed. Sharpness is measured by scanning along the bar and, at each position,
+          exact pixel-to-unit mapping. The bar is always treated as vertical. Sharpness is measured by scanning along the bar and, at each position,
           counting how many individual tick lines are resolvable in a local window — and how prominent each
           one is. Where ticks are in focus they appear as distinct dark troughs; where blurred they merge
           into a smooth gradient and score zero. The score at each position is
