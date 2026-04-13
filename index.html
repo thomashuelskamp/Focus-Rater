@@ -20,7 +20,7 @@
   body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; padding: 2.5rem 2rem 5rem; }
   .wrap { max-width: 820px; margin: 0 auto; }
 
-  header { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 1.1rem; margin-bottom: 2rem; }
+  header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 1.1rem; margin-bottom: 2rem; }
   header h1 { font-family: var(--mono); font-size: 15px; font-weight: 500; }
   header p  { font-size: 12px; color: var(--muted); }
 
@@ -161,7 +161,30 @@
   .stdev-info { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 12px; line-height: 1.8; display: none; }
   .stdev-info b { color: var(--text); }
 
-  /* buttons */
+  /* ── MODE SWITCHER ── */
+  .mode-switcher { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .mode-sw-btn { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 5px 14px; cursor: pointer; background: var(--bg); color: var(--muted); border: none; transition: background 0.12s, color 0.12s; letter-spacing: 0.03em; }
+  .mode-sw-btn + .mode-sw-btn { border-left: 1px solid var(--border); }
+  .mode-sw-btn.active { background: var(--text); color: var(--bg); }
+
+  /* ── DATASET TABLE ── */
+  .dataset-panel { margin-top: 2rem; }
+  .dataset-hdr { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 12px; }
+  .dataset-table { width: 100%; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .dataset-table table { width: 100%; border-collapse: collapse; }
+  .dataset-table th { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 8px 14px; background: var(--surface); text-align: left; border-bottom: 1px solid var(--border); }
+  .dataset-table td { font-family: var(--mono); font-size: 12px; padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .dataset-table tr:last-child td { border-bottom: none; }
+  .dataset-table td.name-cell { font-size: 11px; color: var(--muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dataset-table td.peak-cell { color: var(--peak); font-weight: 500; }
+  .dataset-table td.high-cell { color: var(--high); }
+  .dataset-table tbody tr { cursor: grab; }
+  .dataset-table tbody tr.dragging { opacity: 0.4; cursor: grabbing; }
+  .dataset-table tbody tr.drag-over { box-shadow: inset 0 2px 0 var(--text); }
+  .ctx-menu { position: fixed; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 999; overflow: hidden; display: none; }
+  .ctx-menu.open { display: block; }
+  .ctx-menu button { display: block; width: 100%; text-align: left; font-family: var(--mono); font-size: 11px; padding: 8px 16px; background: none; border: none; cursor: pointer; color: var(--low); }
+  .ctx-menu button:hover { background: var(--low-bg); }
   .btn { font-family: var(--mono); font-size: 11px; padding: 7px 16px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); display: inline-block; transition: opacity 0.12s, background 0.12s; }
   .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
   .btn-primary:hover { opacity: 0.78; }
@@ -221,8 +244,14 @@
 <div class="wrap">
 
   <header>
-    <h1>Focus Rater</h1>
-    <p>Scale-position sharpness mapping</p>
+    <div>
+      <h1>Focus Rater</h1>
+      <p>Scale-position sharpness mapping</p>
+    </div>
+    <div class="mode-switcher">
+      <button class="mode-sw-btn active" id="swSingle" onclick="switchAppMode('single')">Single</button>
+      <button class="mode-sw-btn" id="swDataset" onclick="switchAppMode('dataset')">Collect dataset</button>
+    </div>
   </header>
 
   <div class="steps">
@@ -385,9 +414,10 @@
       <div style="padding:0 12px 12px;border-top:1px solid var(--border);margin-top:4px;">
         <div style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:10px 0 8px;">How sharpness is measured</div>
         <p style="font-size:11px;color:var(--muted);line-height:1.8;max-width:640px;">
-          The bar of small tick lines is located by finding the image column/row band
+          The dense black bar of tick lines is located automatically by finding the image column or row band
           with the highest Laplacian variance. You then click the positions of two scale labels to set the
-          exact pixel-to-unit mapping. The bar is always treated as vertical. Sharpness is measured by scanning along the bar and, at each position,
+          exact pixel-to-unit mapping. The bar is always treated as vertical — rotate your image in Step 1
+          if needed. Sharpness is measured by scanning along the bar and, at each position,
           counting how many individual tick lines are resolvable in a local window — and how prominent each
           one is. Where ticks are in focus they appear as distinct dark troughs; where blurred they merge
           into a smooth gradient and score zero. The score at each position is
@@ -405,12 +435,46 @@
     </div>
 
     <div class="result-actions">
-      <button class="btn btn-primary" onclick="exportCSV()">Export CSV →</button>
+      <button class="btn btn-primary" onclick="exportCSV()">Export CSV (single) →</button>
+      <button id="addToDatasetBtn" class="btn btn-ghost" onclick="addToDataset()" style="display:none;">+ Add to dataset</button>
       <button class="btn btn-ghost"   onclick="resetAll()">New image</button>
     </div>
   </div>
 
+  <!-- DATASET PANEL -->
+  <div class="dataset-panel" id="datasetPanel" style="display:none;">
+    <div class="dataset-hdr">
+      <span class="sec-title">Dataset</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted);" id="datasetCount">0 images</span>
+        <button class="btn btn-primary" onclick="exportDatasetCSV()" style="font-size:10px;padding:5px 12px;">Export CSV (dataset) →</button>
+        <button class="btn btn-ghost" onclick="clearDataset()" style="font-size:10px;padding:5px 10px;">Clear</button>
+      </div>
+    </div>
+    <div class="dataset-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Peak focus</th>
+            <th>Min HIGH</th>
+            <th>Max HIGH</th>
+            <th>HIGH range</th>
+          </tr>
+          <tr id="datasetThreshRow" style="background:var(--surface);">
+            <td colspan="5" id="datasetThreshVals" style="font-family:var(--mono);font-size:9px;color:var(--muted);padding:5px 14px;border-bottom:1px solid var(--border);"></td>
+          </tr>
+        </thead>
+        <tbody id="datasetBody">
+          <tr><td colspan="5" class="dataset-empty">No images added yet. Run analysis and click "+ Add to dataset".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
+<div class="ctx-menu" id="ctxMenu">
+  <button onclick="removeDatasetRow()">Remove row</button>
+</div>
 
 </div>
 
@@ -979,6 +1043,12 @@ function showResults() {
   resultsEl.style.display = 'block';
   if (firstRun) resultsEl.scrollIntoView({ behavior:'smooth', block:'start' });
 
+  // Show add-to-dataset button if in dataset mode
+  const addBtn = document.getElementById('addToDatasetBtn');
+  addBtn.style.display = appMode === 'dataset' ? 'inline-block' : 'none';
+  addBtn.disabled = false;
+  addBtn.textContent = '+ Add to dataset';
+
   const { ranges, profile, labelA, labelB, file } = state;
 
   document.getElementById('resultMeta').textContent =
@@ -1237,6 +1307,7 @@ function resetAll() {
   btn.disabled=true; btn.style.opacity='0.4';
   document.getElementById('toStep2Btn').disabled=true;
   document.getElementById('results').style.display='none';
+  document.getElementById('addToDatasetBtn').style.display='none';
   document.getElementById('fi').value='';
   // reset mode to manual
   setMode('manual');
@@ -1247,6 +1318,141 @@ function openLightbox() {
   const src = document.getElementById('previewImg').src;
   document.getElementById('lightboxImg').src = src;
   document.getElementById('lightbox').classList.add('open');
+}
+
+function removeDatasetRow() {
+  if (ctxTargetIdx == null) return;
+  dataset.splice(ctxTargetIdx, 1);
+  ctxTargetIdx = null;
+  document.getElementById('ctxMenu').classList.remove('open');
+  renderDatasetTable();
+}
+
+document.addEventListener('click', () => document.getElementById('ctxMenu').classList.remove('open'));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('ctxMenu').classList.remove('open'); });
+
+// ── DATASET ───────────────────────────────────────────────────────────────
+let appMode = 'single'; // 'single' | 'dataset'
+let dataset = [];
+
+function switchAppMode(m) {
+  appMode = m;
+  document.getElementById('swSingle').classList.toggle('active', m === 'single');
+  document.getElementById('swDataset').classList.toggle('active', m === 'dataset');
+  document.getElementById('datasetPanel').style.display = m === 'dataset' ? 'block' : 'none';
+  if (m === 'dataset') renderDatasetTable();
+  const hasResults = document.getElementById('results').style.display !== 'none';
+  document.getElementById('addToDatasetBtn').style.display = (m === 'dataset' && hasResults) ? 'inline-block' : 'none';
+}
+
+function addToDataset() {
+  if (!state.profile || !state.ranges) return;
+  const peak = computePeak(state.profile);
+  const highRanges = state.ranges.filter(r => r.cls === 'high');
+  const minHigh = highRanges.length ? Math.min(...highRanges.map(r => Math.min(r.start, r.end))) : null;
+  const maxHigh = highRanges.length ? Math.max(...highRanges.map(r => Math.max(r.start, r.end))) : null;
+  const rangeHigh = (minHigh != null && maxHigh != null) ? Math.abs(maxHigh - minHigh) : null;
+
+  const entry = {
+    name: state.file ? state.file.name : '—',
+    peak: peak ? peak.scaleVal : null,
+    minHigh, maxHigh, rangeHigh
+  };
+  dataset.push(entry);
+  renderDatasetTable();
+  // Disable button so same result isn't added twice
+  const btn = document.getElementById('addToDatasetBtn');
+  btn.disabled = true;
+  btn.textContent = '✓ Added';
+}
+
+// ── DATASET CONTEXT MENU ─────────────────────────────────────────────────
+let ctxTargetIdx = null;
+
+function renderDatasetTable() {
+  const tbody = document.getElementById('datasetBody');
+  document.getElementById('datasetCount').textContent = `${dataset.length} image${dataset.length !== 1 ? 's' : ''}`;
+  if (!dataset.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="dataset-empty">No images added yet. Run analysis and click "+ Add to dataset".</td></tr>';
+  } else {
+    const nameCounts = {};
+    const nameIndex  = {};
+    dataset.forEach(e => { nameCounts[e.name] = (nameCounts[e.name] || 0) + 1; });
+
+    const fmt = v => v != null ? v.toFixed(2) : '—';
+    tbody.innerHTML = dataset.map(e => {
+      let label = e.name;
+      if (nameCounts[e.name] > 1) {
+        nameIndex[e.name] = (nameIndex[e.name] || 0) + 1;
+        label = `${e.name} (${nameIndex[e.name]})`;
+      }
+      return `
+      <tr>
+        <td class="name-cell" title="${label}">${label}</td>
+        <td class="peak-cell">${fmt(e.peak)}</td>
+        <td class="high-cell">${fmt(e.minHigh)}</td>
+        <td class="high-cell">${fmt(e.maxHigh)}</td>
+        <td class="high-cell">${fmt(e.rangeHigh)}</td>
+      </tr>`;
+    }).join('');
+    // Attach right-click and drag-reorder handlers
+    let dragSrcIdx = null;
+    Array.from(tbody.rows).forEach((row, i) => {
+      row.draggable = true;
+
+      row.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        ctxTargetIdx = i;
+        const menu = document.getElementById('ctxMenu');
+        menu.style.left = e.clientX + 'px';
+        menu.style.top  = e.clientY + 'px';
+        menu.classList.add('open');
+      });
+
+      row.addEventListener('dragstart', () => {
+        dragSrcIdx = i;
+        setTimeout(() => row.classList.add('dragging'), 0);
+      });
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        Array.from(tbody.rows).forEach(r => r.classList.remove('drag-over'));
+      });
+      row.addEventListener('dragover', e => {
+        e.preventDefault();
+        Array.from(tbody.rows).forEach(r => r.classList.remove('drag-over'));
+        if (i !== dragSrcIdx) row.classList.add('drag-over');
+      });
+      row.addEventListener('drop', e => {
+        e.preventDefault();
+        if (dragSrcIdx == null || dragSrcIdx === i) return;
+        const moved = dataset.splice(dragSrcIdx, 1)[0];
+        dataset.splice(i, 0, moved);
+        renderDatasetTable();
+      });
+    });
+  }
+  // Update threshold footer
+  const tL = getTL(), tH = getTH();
+  document.getElementById('datasetThreshVals').textContent = `HIGH ≥ ${tH}`;
+}
+
+function clearDataset() {
+  dataset = [];
+  renderDatasetTable();
+}
+
+function exportDatasetCSV() {
+  if (!dataset.length) return;
+  const rows = [['Image', 'Peak focus', 'Min HIGH', 'Max HIGH', 'HIGH range']];
+  dataset.forEach(e => {
+    const fmt = v => v != null ? v.toFixed(2) : '';
+    rows.push([e.name, fmt(e.peak), fmt(e.minHigh), fmt(e.maxHigh), fmt(e.rangeHigh)]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'focus_dataset.csv';
+  a.click();
 }
 
 // init
